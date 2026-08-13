@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { ApiError, todayIso } from '@daycore/core';
 import type { Boot, CustomTheme, DayPlan, Proposal, TimeBlock, Wish } from '@daycore/core';
@@ -26,6 +26,35 @@ export interface Draft {
   note?: string;
 }
 
+/** One tool call shown collapsed inside an assistant message. */
+export interface ToolCard {
+  callId: string;
+  label: string;
+  ok?: boolean;
+  summary?: string;
+  opId?: string;
+}
+
+/** A decision card the agent is blocked on (≤45s). */
+export interface DecisionState {
+  id: string;
+  title: string;
+  summary?: string;
+  options: { id: string; label: string }[];
+  answered?: boolean;
+}
+
+export interface ChatMsg {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  reasoning?: string;
+  tools?: ToolCard[];
+  decision?: DecisionState;
+  error?: string;
+  status: 'streaming' | 'done';
+}
+
 const UNDO_MS = 6000;
 let nextToast = 1;
 
@@ -46,6 +75,10 @@ export function useStore(boot: Boot) {
   const [error, setError] = useState('');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [tick, setTick] = useState(() => nowMin());
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [chat, setChat] = useState<ChatMsg[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
+  const companionLoaded = useRef(false);
 
   useEffect(() => {
     const h = setInterval(() => setTick(nowMin()), 30_000);
@@ -139,6 +172,76 @@ export function useStore(boot: Boot) {
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   }, [refresh]);
+
+  // ── companion (SSE v2) ──
+  const openCompanion = useCallback(async () => {
+    if (companionLoaded.current) return;
+    companionLoaded.current = true;
+    try {
+      const { threads } = await api.threads();
+      const first = threads[0];
+      const tid = first ? first.id : (await api.createThread()).id;
+      setThreadId(tid);
+      // ⚠️ threadMessages is newest-first; reverse before rendering a transcript.
+      const { messages } = await api.threadMessages(tid, 50);
+      setChat(messages.slice().reverse().map((m) => ({
+        id: m.id,
+        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.content,
+        status: 'done' as const,
+      })));
+    } catch {
+      /* history is best-effort — an empty transcript still chats */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view === 'companion') void openCompanion();
+  }, [view, openCompanion]);
+
+  const sendCompanion = useCallback(async (text: string) => {
+    if (!threadId) return;
+    const asstId = 'a' + Date.now();
+    setChat((prev) => [
+      ...prev,
+      { id: 'u' + Date.now(), role: 'user', content: text, status: 'done' },
+      { id: asstId, role: 'assistant', content: '', status: 'streaming' },
+    ]);
+    setChatBusy(true);
+    const patch = (fn: (m: ChatMsg) => ChatMsg) =>
+      setChat((prev) => prev.map((m) => (m.id === asstId ? fn(m) : m)));
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    try {
+      await api.streamCompanion(
+        { message: text, timezone: tz, threadId },
+        {
+          onDelta: (d) => patch((m) => ({ ...m, content: m.content + d })),
+          onReasoning: (d) => patch((m) => ({ ...m, reasoning: (m.reasoning || '') + d })),
+          onToolStart: (f) => patch((m) => ({ ...m, tools: [...(m.tools || []), { callId: f.callId, label: f.tool }] })),
+          onToolResult: (f) => patch((m) => ({
+            ...m,
+            tools: (m.tools || []).map((tc) =>
+              tc.callId === f.callId ? { ...tc, ok: f.ok, summary: f.summary, opId: f.opId } : tc,
+            ),
+          })),
+          onDecisionCard: (f) => patch((m) => ({ ...m, decision: { id: f.id, title: f.title, summary: f.summary, options: f.options } })),
+          onError: (_code, msg) => patch((m) => ({ ...m, error: msg, status: 'done' })),
+          onDone: () => patch((m) => ({ ...m, status: 'done' })),
+        },
+      );
+    } catch (e) {
+      patch((m) => ({ ...m, error: e instanceof Error ? e.message : String(e), status: 'done' }));
+    } finally {
+      setChatBusy(false);
+    }
+  }, [threadId]);
+
+  const respondDecision = useCallback(async (did: string, choice: string, text?: string) => {
+    setChat((prev) => prev.map((m) =>
+      m.decision && m.decision.id === did ? { ...m, decision: { ...m.decision, answered: true } } : m,
+    ));
+    try { await api.respondToDecision(did, choice, text); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  }, []);
 
   // ── theme ──
   const setTheme = useCallback(async (id: string) => {
@@ -309,6 +412,7 @@ export function useStore(boot: Boot) {
     doneCount: timed.filter((b) => b.completed).length, total: timed.length,
     toggleDone, setCompleted, moveTime, moveToTomorrow, toWish, refish, markConflict, removeBlock, setNote, lockBlock, dropInWell,
     answer, takeRow, takeBack, refresh,
+    threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
   };
 }
 

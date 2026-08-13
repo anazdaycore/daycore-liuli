@@ -56,7 +56,6 @@
   "drawer.trace": "Trace",
   "drawer.companion": "Companion",
   "trace.summary": "Marked {done} of {total}",
-  "companion.hint": "Your chats with Xiaohe will live here — just type in the bar below.",
   "draft.title": "Put these in?",
   "draft.discard": "Not yet",
   "draft.confirm": "Do it",
@@ -118,5 +117,10 @@
   "refusal.lockedSoft": "This one was agreed with someone else — confirm to change it",
   "refusal.locked.sub": "Open the block and pick \"mark conflict\", or drop it on \"re-plan\"",
   "refusal.lockedSoft.sub": "Drag it again, or open the block and pick \"mark conflict\"",
-  "undo.keep": "Filed to notes: {title}"
+  "undo.keep": "Filed to notes: {title}",
+  "companion.empty": "Say something to Xiaohe — the history stays here",
+  "companion.reasoning": "Thinking",
+  "companion.undo": "Undo",
+  "companion.decision.answered": "Answered",
+  "companion.decision.custom": "Say it your way…"
 }

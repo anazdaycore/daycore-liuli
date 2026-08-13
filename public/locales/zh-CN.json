@@ -56,7 +56,6 @@
   "drawer.trace": "足迹",
   "drawer.companion": "伙伴",
   "trace.summary": "已标 {done} 件 · 共 {total} 件",
-  "companion.hint": "这里会留着和小禾的聊天记录——直接在下面的输入条说。",
   "draft.title": "就放这些？",
   "draft.discard": "再想想",
   "draft.confirm": "就这么办",
@@ -118,5 +117,10 @@
   "refusal.lockedSoft": "这件事和别人约好了，确认一下再改",
   "refusal.locked.sub": "点开块选「标记冲突」，或拖进「小禾重排」",
   "refusal.lockedSoft.sub": "重新拖一次，或点开块选「标记冲突」",
-  "undo.keep": "收进资料：{title}"
+  "undo.keep": "收进资料：{title}",
+  "companion.empty": "跟小禾说句话——这里会留着聊天记录",
+  "companion.reasoning": "思考过程",
+  "companion.undo": "撤销",
+  "companion.decision.answered": "已回",
+  "companion.decision.custom": "换个说法…"
 }

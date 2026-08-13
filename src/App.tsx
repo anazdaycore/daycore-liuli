@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import type { Boot } from '@daycore/core';
 import { addDaysIso, isoOf, toHM, toMin } from './canvas';
+import { Companion } from './Companion';
 import { DayCanvas } from './DayCanvas';
 import { WeekLens } from './WeekLens';
 import {
@@ -117,7 +118,7 @@ export function App({ boot }: { boot: Boot }) {
       {s.view === 'materials' && <Drawer title={t('drawer.materials')} side="left" onClose={() => s.setView('today')}>{s.materials.map((m) => <div key={m.id} className="cj-item"><div className="bd"><div className="t">{m.title}</div>{m.summary ? <div className="s">{m.summary}</div> : null}</div></div>)}</Drawer>}
       {s.view === 'outlook' && <Drawer title={t('drawer.outlook')} side="right" onClose={() => s.setView('today')}>{s.wishes.map((w) => <div key={w.id} className="cj-item"><div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{w.effortMin} min</div> : null}</div></div>)}</Drawer>}
       {s.view === 'trace' && <Drawer title={t('drawer.trace')} side="top" onClose={() => s.setView('today')}><div className="cj-sec">{t('trace.summary', { done: s.doneCount, total: s.total })}</div></Drawer>}
-      {s.view === 'companion' && <Drawer title={t('drawer.companion')} side="bottom" onClose={() => s.setView('today')}><div className="cj-sub" style={{ padding: '4px 0' }}>{t('companion.hint')}</div></Drawer>}
+      {s.view === 'companion' && <Companion s={s} onClose={() => s.setView('today')} />}
       {s.view === 'settings' && <Drawer title={t('menu.settings')} side="top" onClose={() => s.setView('today')}><ThemeGrid s={s} /></Drawer>}
 
       {s.view === 'today' && s.stack.length > 0 && (
@@ -190,6 +191,7 @@ export function App({ boot }: { boot: Boot }) {
 
       {s.error && <div className="cj-toasts" style={{ bottom: 8 }}><div className="cj-toast glass"><span className="ic" style={{ color: 'var(--warm)' }}><X size={14} /></span><div className="bd"><div className="lb">{s.error}</div></div></div></div>}
 
+      {s.view !== 'companion' && (
       <footer className="cj-bottom">
         <div className="cj-inputbar glass">
           <span className="ctx">{ctx[s.view]}</span>
@@ -207,6 +209,7 @@ export function App({ boot }: { boot: Boot }) {
           })}
         </nav>
       </footer>
+      )}
     </div>
   );
 }
