@@ -120,6 +120,37 @@ export function App({ boot }: { boot: Boot }) {
       {s.view === 'companion' && <Drawer title={t('drawer.companion')} side="bottom" onClose={() => s.setView('today')}><div className="cj-sub" style={{ padding: '4px 0' }}>{t('companion.hint')}</div></Drawer>}
       {s.view === 'settings' && <Drawer title={t('menu.settings')} side="top" onClose={() => s.setView('today')}><ThemeGrid s={s} /></Drawer>}
 
+      {s.view === 'today' && s.stack.length > 0 && (
+        <div className="cj-stack">
+          {s.stack.map((p) => (
+            <div key={p.id} className="cj-card glass">
+              <h4>{p.title}</h4>
+              {p.summary ? <div className="sum">{p.summary}</div> : null}
+              {p.rows && p.rows.length > 0 ? (
+                <div className="cj-rows">
+                  {p.rows.map((r) => (
+                    <div key={r.id} className={'cj-row' + (r.state === 'accepted' ? ' acc' : '')}>
+                      <span className="lb">{r.label}</span>
+                      {r.state === 'pending' && (
+                        <>
+                          <button className="rb y" onClick={() => void s.takeRow(p, r.id)}><Check size={13} /></button>
+                          <button className="rb n" onClick={() => void s.answer(p, false)}><X size={12} /></button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="cj-actions">
+                  <button className="cj-btn pri" onClick={() => void s.answer(p, true)}><Check size={14} />{t('ghost.accept')}</button>
+                  <button className="cj-btn sec" onClick={() => void s.answer(p, false)}>{t('ghost.reject')}</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {s.draft && <div className="cj-veil" onClick={() => s.setDraft(null)}></div>}
       {s.draft && (
         <div className="cj-pop glass" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 340, zIndex: 70 } as React.CSSProperties}>
