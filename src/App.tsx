@@ -117,7 +117,7 @@ export function App({ boot }: { boot: Boot }) {
                   (box.stacked ? ' stacked' : '') +
                   (box.compact ? ' compact' : '') +
                   (past ? ' past' : '') +
-                  (blk.lockLevel === 'hard' ? ' locked' : '')
+                  (blk.lock_level === 'hard' ? ' locked' : '')
                 }
                 style={style}
               >
@@ -133,7 +133,7 @@ export function App({ boot }: { boot: Boot }) {
                       {blk.duration_min ? (
                         <span>{t('block.minutes', { n: blk.duration_min })}</span>
                       ) : null}
-                      {blk.lockLevel === 'hard' && <span>{t('block.locked')}</span>}
+                      {blk.lock_level === 'hard' && <span>{t('block.locked')}</span>}
                       {blk.completed && <span>{t('block.completed')}</span>}
                     </div>
                     {!blk.completed && (
