@@ -1,12 +1,13 @@
 import { SPEAKS } from '@daycore/core';
-import type { KindSpec, Manifest, TokenSpec } from '@daycore/core';
+import type { Manifest, TokenSpec } from '@daycore/core';
 
 // 琉璃 · 长卷 —— 时间是一块连续的空间画布。
 //
-// ⚠️ Its own family, like the other two. A theme is a set of values for ONE
-// token space, and 长卷's space is a canvas's: it has a grid line, a now line,
-// a ghost outline. 汀 has water; 纸屿 has paper. None of those words mean
-// anything in the other two.
+// ⚠️ Its own family, like the other three. A theme is a set of values for ONE
+// token space, and 长卷's space is a canvas's: a background gradient, three
+// levels of ink, an accent pair, a glass surface, and the few lines only a map
+// of time has (the hour line, the now line). 汀 has water; 纸屿 has paper. None
+// of those words mean anything in the other two.
 
 export const FAMILY_ID = 'liuli';
 export const DISPLAY_NAME = '琉璃 · 长卷';
@@ -16,52 +17,57 @@ export const DISPLAY_NAME = '琉璃 · 长卷';
 export const MIN_API = SPEAKS.major;
 
 /**
- * ⚠️ THE THIRD frontend to need a kind the embedded six cannot express, and the
- * first to need one that is not about a value's syntax at all: a dashed outline
- * is a LIST of lengths (`4px 3px`), and `list-of<length>` is the one combinator
- * that does express it — so 长卷 proposes nothing for that.
+ * 长卷's token space.
  *
- * What it does need is `ratio-or-length`: the ghost's inset is either a
- * proportion of the lane or a fixed offset, and the two are genuinely
- * interchangeable there. `nullable<…>` and `one-of[…]` cannot union two
- * primitives, which is the gap.
+ * ⚠️ These names must match what src/theme.css actually reads — the theme
+ * editor offers a variable that changes nothing otherwise, which reads as "the
+ * backend lost my value" and is the single most confusing outcome.
+ *
+ * Deliberately NOT every `--cj-*`/derived variable in the stylesheet. The
+ * derived ones (`--accent-soft`, `--line`, `--glass2`, `--veil`,
+ * `--c-task`, `--shadow`, …) are colour-mix plumbing a person theming a
+ * canvas would never set by hand, and they recompute automatically off the
+ * primitives below. What is here is the handoff's themeable set — the colours,
+ * the three radii, and the lock variables it names explicitly as "AI 生成主题时
+ * 可覆盖" (HANDOFF 06 §1).
  */
-const RATIO_OR_LENGTH: KindSpec = {
-  name: 'ratio-or-length',
-  pattern: '0|0?\\.[0-9]+|1(\\.0+)?|[0-9.]+(px|rem)',
-  description: '比例（0–1）或长度（px/rem）。虚影内缩可以按比例也可以按固定值',
-};
-
-export const PROPOSED_KINDS: KindSpec[] = [RATIO_OR_LENGTH];
-
 export const TOKENS: TokenSpec[] = [
-  { name: '--color-bg-start', kind: 'color', description: '画布背景渐变起点' },
-  { name: '--color-bg-end', kind: 'color', description: '画布背景渐变终点' },
-  { name: '--color-surface', kind: 'color', description: '块的表面' },
-  { name: '--color-surface-hover', kind: 'color', description: '块 hover 时的表面' },
-  { name: '--color-primary', kind: 'color', description: '主色：当前、主按钮' },
-  { name: '--color-accent', kind: 'color', description: '强调色' },
-  { name: '--color-text-primary', kind: 'color', description: '块标题' },
-  { name: '--color-text-secondary', kind: 'color', description: '时长、标签' },
-  { name: '--color-text-muted', kind: 'color', description: '小时刻度、已过去的块' },
-  { name: '--color-border-custom', kind: 'color', description: '块描边与刻度线' },
-  { name: '--color-states-success', kind: 'color', description: '完成' },
-  { name: '--color-states-warning', kind: 'color', description: '提醒' },
-  { name: '--color-states-error', kind: 'color', description: '冲突' },
-  // ── 画布自己的东西 ──
+  // ── the canvas itself ──
+  { name: '--bg', kind: 'color', description: '画布背景渐变起点（整屏底色）' },
+  { name: '--bg2', kind: 'color', description: '画布背景渐变终点（略亮）' },
+  // ── ink ──
+  { name: '--ink', kind: 'color', description: '正文墨色' },
+  { name: '--ink2', kind: 'color', description: '次级墨色：时长、元信息' },
+  { name: '--ink3', kind: 'color', description: '最弱墨色：刻度、标签、已过去的块' },
+  // ── accent ──
+  { name: '--accent', kind: 'color', description: '主色：现在线、主按钮、选中态' },
+  { name: '--accent2', kind: 'color', description: '副强调色：约会类块、次级高亮' },
+  // ── glass ──
+  { name: '--glass', kind: 'color', description: '玻璃表面（半透明）' },
+  { name: '--glass-brd', kind: 'color', description: '玻璃描边' },
+  // ── status ──
+  { name: '--ok', kind: 'color', description: '完成、放松类块' },
+  { name: '--warm', kind: 'color', description: '提醒、用餐类块、暖色点缀' },
+  // ── the lock (HANDOFF 02 §4: --lock-c / --lock-sz / --lock-op / --lock-radius) ──
+  { name: '--lock-c', kind: 'color', description: '锁的颜色，默认取 --ink3' },
+  { name: '--lock-sz', kind: 'length', description: '锁体宽度' },
+  { name: '--lock-op', kind: 'ratio', description: '锁的不透明度（0–1）' },
+  { name: '--lock-radius', kind: 'length', description: '锁体圆角' },
+  // ── shape ──
+  { name: '--r-lg', kind: 'length', description: '大圆角：抽屉、卡片' },
+  { name: '--r-md', kind: 'length', description: '中圆角' },
+  { name: '--r-sm', kind: 'length', description: '小圆角' },
+  // ── the lines only a time map has ──
   { name: '--cj-hour-line', kind: 'color', description: '整点刻度线。⚠️ 要淡到不和块抢' },
   { name: '--cj-now-line', kind: 'color', description: '「现在」那条线' },
-  { name: '--cj-ghost-dash', kind: 'list-of<length>', description: '虚影的虚线节奏，如 4px 3px' },
-  { name: '--cj-ghost-inset', kind: 'ratio-or-length', description: '虚影相对块的内缩' },
-  { name: '--radius-card', kind: 'length', description: '块圆角' },
-  { name: '--radius-sheet', kind: 'length', description: '抽屉圆角' },
 ];
 
 export const THEME_RULES = [
   '长卷 是一张地图：整屏是连续的时间，块是贴在上面的东西。所以背景要能承托很多块而不喧宾夺主。',
   '⚠️ --cj-hour-line 必须非常淡。刻度线一旦和块争夺注意力，地图就退化成表格。',
   '--cj-now-line 是唯一应该被一眼看到的线，但它是 1.5px 均匀实线，不是渐变 —— 渐变会让它左粗右消、视觉偏心。',
-  '过去的块饱和度更低、未来的更淡，这个梯度靠 --color-text-muted 与表面色的关系撑起来。',
+  '三级墨色（--ink / --ink2 / --ink3）拉开层次，最弱那级要真的退到背景里去。',
+  '--glass 与 --glass-brd 都要半透明，撑起玻璃拟态；深色主题记得用很低透明度的白。',
 ].join('\n');
 
 export function manifest(buildHash: string): Manifest {
@@ -71,6 +77,6 @@ export function manifest(buildHash: string): Manifest {
     displayName: DISPLAY_NAME,
     version: __APP_VERSION__,
     minApi: MIN_API,
-    theme: { tokens: TOKENS, kinds: PROPOSED_KINDS, rules: THEME_RULES },
+    theme: { tokens: TOKENS, rules: THEME_RULES },
   };
 }

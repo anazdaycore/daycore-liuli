@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DayPlan, Proposal, TimeBlock } from '@daycore/core';
 import {
-  boxOf, canvasHeight, COMPACT_UNDER, DAY0, DEFAULT_DUR, laneize,
-  MIN_HEIGHT, piecesFor, toMin, wellAt, yOf,
+  addDaysIso, boxOf, canvasHeight, COMPACT_UNDER, DAY0, DEFAULT_DUR, isoOf, laneize,
+  MIN_HEIGHT, PETRIFY_HORIZON_MIN, phaseOf, piecesFor, snap5, toMin, wellAt, yOf,
 } from './canvas';
 
 const b = (o: Partial<TimeBlock> & { id: string; time: string | null }): TimeBlock => ({
@@ -189,5 +189,50 @@ describe('wellAt', () => {
       wellAt(W - 10, H - 10, W, H, false),
     ]);
     expect(seen.size).toBe(4);
+  });
+});
+
+describe('isoOf / addDaysIso', () => {
+  it('formats an ISO date and adds days across month boundaries', () => {
+    expect(isoOf(new Date(2026, 7, 13, 12, 0))).toBe('2026-08-13');
+    expect(addDaysIso('2026-08-31', 1)).toBe('2026-09-01');
+    expect(addDaysIso('2026-08-13', -1)).toBe('2026-08-12');
+  });
+});
+
+describe('snap5', () => {
+  it('rounds to the nearest 5 minutes', () => {
+    expect(snap5(602)).toBe(600);
+    expect(snap5(603)).toBe(605);
+    expect(snap5(600)).toBe(600);
+  });
+});
+
+describe('phaseOf', () => {
+  const now = new Date(2026, 7, 13, 14, 30); // 14:30 on 2026-08-13
+
+  it('classifies a future block', () => {
+    expect(phaseOf(b({ id: 'f', time: '16:00', duration_min: 60 }), '2026-08-13', now)).toBe('future');
+  });
+  it('classifies a running block', () => {
+    expect(phaseOf(b({ id: 'n', time: '14:00', duration_min: 60 }), '2026-08-13', now)).toBe('now');
+  });
+  it('classifies a finished block as recon', () => {
+    expect(phaseOf(b({ id: 'r', time: '12:00', duration_min: 60 }), '2026-08-13', now)).toBe('recon');
+  });
+  it('treats a past day as stone', () => {
+    expect(phaseOf(b({ id: 's', time: '10:00', duration_min: 60 }), '2026-08-12', now)).toBe('stone');
+  });
+  it('keeps last night editable before the 5h horizon', () => {
+    const early = new Date(2026, 7, 13, 3, 0); // 03:00
+    expect(phaseOf(b({ id: 'y', time: '22:00', duration_min: 60 }), '2026-08-12', early)).toBe('recon');
+    const late = new Date(2026, 7, 13, 6, 0); // 06:00, horizon passed
+    expect(phaseOf(b({ id: 'y', time: '22:00', duration_min: 60 }), '2026-08-12', late)).toBe('stone');
+  });
+  it('treats an untimed block as future (never freezes)', () => {
+    expect(phaseOf(b({ id: 'u', time: null }), '2026-08-13', now)).toBe('future');
+  });
+  it('exposes the 5-hour horizon constant', () => {
+    expect(PETRIFY_HORIZON_MIN).toBe(300);
   });
 });

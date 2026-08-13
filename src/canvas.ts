@@ -226,3 +226,58 @@ export function wellAt(
   }
   return best;
 }
+
+// ── phase & day helpers ─────────────────────────────────────────────────────
+
+/**
+ * Where a block sits relative to now and to the petrify line.
+ *
+ * ⚠️ Mirrors internal/domain/phase.go PhaseAt / PhaseIn, using wall-clock
+ * minutes. A frontend needs the AFFORDANCES the phase buys (stone blocks only
+ * offer "重新安排"; recon blocks offer the "它该去哪儿" three-choice), not the
+ * backend's exact DST-folded instant. The one edge worth keeping: "last night"
+ * stays editable until the 5-hour horizon passes, so a 1 a.m. check-in still
+ * feels like tonight.
+ */
+export type Phase = 'future' | 'now' | 'recon' | 'stone';
+
+export const PETRIFY_HORIZON_MIN = 5 * 60;
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** YYYY-MM-DD in the local zone. */
+export function isoOf(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** Add n days to an ISO date, keeping it wall-clock safe. */
+export function addDaysIso(iso: string, n: number): string {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return isoOf(d);
+}
+
+export function phaseOf(block: TimeBlock, date: string, now = new Date()): Phase {
+  if (block.time == null) return 'future';
+  const start = toMin(block.time);
+  const end = start + (block.duration_min ?? DEFAULT_DUR);
+  const today = isoOf(now);
+  if (date > today) return 'future';
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  if (date < today) {
+    // Only "last night" is still editable — and only until the horizon.
+    if (date === addDaysIso(today, -1) && nowMin < PETRIFY_HORIZON_MIN) return 'recon';
+    return 'stone';
+  }
+  if (end <= nowMin) return 'recon';
+  if (start <= nowMin) return 'now';
+  return 'future';
+}
+
+/** Snap a minute to the nearest 5, for drag landing. */
+export function snap5(min: number): number {
+  return Math.round(min / 5) * 5;
+}
+
