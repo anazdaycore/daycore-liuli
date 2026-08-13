@@ -273,15 +273,25 @@ export function useStore(boot: Boot) {
   }, [date, draft, push, refresh, t]);
 
   // ── wells ──
+  const keepBlock = useCallback(
+    (b: TimeBlock) =>
+      act(async () => {
+        // ⚠️ material first, then remove: a lost note is worse than a stray block.
+        await api.createMaterial({ title: b.title, category: 'note', source: 'user' });
+        await api.patchPlan(date, { action: 'remove', match: { id: b.id } });
+      }, t('undo.keep', { title: b.title })),
+    [act, date, t],
+  );
+
   const dropInWell = useCallback(
     (well: string, b: TimeBlock) => {
       if (well === 'tomorrow') return moveToTomorrow(b);
       if (well === 'someday') return toWish(b);
       if (well === 'replan') return refish(b.id);
-      if (well === 'keep') { push({ label: t('well.keep'), sub: t('well.keep.sub') }); return Promise.resolve(); }
+      if (well === 'keep') return keepBlock(b);
       return Promise.resolve();
     },
-    [moveToTomorrow, toWish, refish, push, t],
+    [moveToTomorrow, toWish, refish, keepBlock],
   );
 
   const pieces: Piece[] = piecesFor(plan, proposals);

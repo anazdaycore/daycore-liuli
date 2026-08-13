@@ -79,7 +79,6 @@
   "drag.stone": "过去的记录不改写",
   "drag.stone.sub": "想补的话，点开用「重新安排」放个新的",
   "well.keep": "资料收好",
-  "well.keep.sub": "这一端还接不上「收进资料」——先记在这里吧",
   "well.tomorrow": "交给明天",
   "well.someday": "改天再说",
   "well.replan": "小禾重排",
@@ -118,5 +117,6 @@
   "refusal.lockedHard": "这个时间由课表决定，挪不动",
   "refusal.lockedSoft": "这件事和别人约好了，确认一下再改",
   "refusal.locked.sub": "点开块选「标记冲突」，或拖进「小禾重排」",
-  "refusal.lockedSoft.sub": "重新拖一次，或点开块选「标记冲突」"
+  "refusal.lockedSoft.sub": "重新拖一次，或点开块选「标记冲突」",
+  "undo.keep": "收进资料：{title}"
 }

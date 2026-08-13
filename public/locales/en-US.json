@@ -79,7 +79,6 @@
   "drag.stone": "The past isn't rewritten",
   "drag.stone.sub": "To make up for it, open it and use \"reschedule\"",
   "well.keep": "File it",
-  "well.keep.sub": "This frontend can't file into notes yet — keep it here for now",
   "well.tomorrow": "Tomorrow",
   "well.someday": "Another day",
   "well.replan": "Re-plan",
@@ -118,5 +117,6 @@
   "refusal.lockedHard": "This time is set by your timetable and cannot be moved",
   "refusal.lockedSoft": "This one was agreed with someone else — confirm to change it",
   "refusal.locked.sub": "Open the block and pick \"mark conflict\", or drop it on \"re-plan\"",
-  "refusal.lockedSoft.sub": "Drag it again, or open the block and pick \"mark conflict\""
+  "refusal.lockedSoft.sub": "Drag it again, or open the block and pick \"mark conflict\"",
+  "undo.keep": "Filed to notes: {title}"
 }
