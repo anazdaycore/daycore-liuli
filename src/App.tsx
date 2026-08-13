@@ -71,20 +71,38 @@ export function App({ boot }: { boot: Boot }) {
                   <div className="cj-blk-title">{p.title}</div>
                   {!box.compact && (
                     <div className="cj-blk-acts">
-                      <button
-                        className="cj-btn pri"
-                        disabled={s.busy}
-                        onClick={() => p.proposal && void s.answer(p.proposal, true)}
-                      >
-                        {t('ghost.accept')}
-                      </button>
-                      <button
-                        className="cj-btn"
-                        disabled={s.busy}
-                        onClick={() => p.proposal && void s.answer(p.proposal, false)}
-                      >
-                        {t('ghost.reject')}
-                      </button>
+                      {/* ⚠️ A card with rows is a menu and cannot be answered by
+                          this pair — "accept" matches no row id, so it settles
+                          without running the ops the rows carry. */}
+                      {p.proposal?.rows?.length ? (
+                        p.proposal.rows.map((row) => (
+                          <button
+                            key={row.id}
+                            className="cj-btn"
+                            disabled={s.busy}
+                            onClick={() => p.proposal && void s.take(p.proposal, row.id)}
+                          >
+                            {row.label}
+                          </button>
+                        ))
+                      ) : (
+                        <>
+                          <button
+                            className="cj-btn pri"
+                            disabled={s.busy}
+                            onClick={() => p.proposal && void s.answer(p.proposal, true)}
+                          >
+                            {t('ghost.accept')}
+                          </button>
+                          <button
+                            className="cj-btn"
+                            disabled={s.busy}
+                            onClick={() => p.proposal && void s.answer(p.proposal, false)}
+                          >
+                            {t('ghost.reject')}
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
