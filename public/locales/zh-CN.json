@@ -236,5 +236,6 @@
   "outlook.drop": "放下",
   "outlook.wishPlaceholder": "想做点什么：想学 / 想去 / 想买…",
   "outlook.wishAdded": "记进想做清单了",
-  "top.weekHint": "最多看到一周"
+  "top.weekHint": "最多看到一周",
+  "ai.notConfigured": "还没配 AI —— 不是坏了，是还没接上。到设置里给默认模型配上 key 就能用了"
 }

@@ -236,5 +236,6 @@
   "outlook.drop": "let go",
   "outlook.wishPlaceholder": "Something you want: learn / go / buy…",
   "outlook.wishAdded": "Added to wishes",
-  "top.weekHint": "at most a week"
+  "top.weekHint": "at most a week",
+  "ai.notConfigured": "AI isn't set up yet — not broken, just not connected. Add a key for the default model in settings"
 }

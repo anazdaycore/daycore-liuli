@@ -68,8 +68,8 @@ function ThemeStudio({ s }: { s: S }) {
       const dark = !!(res as { dark?: boolean }).dark;
       setPreview({ name, dark, variables, editingId: editing ? editing.id : undefined });
       applyCandidate({ dark, variables });
-    } catch {
-      setErr(t('settings.theme.aiError'));
+    } catch (e) {
+      setErr(e instanceof api.ApiError && e.code === 'ai_not_configured' ? t('ai.notConfigured') : t('settings.theme.aiError'));
     } finally {
       setBusy(false);
     }

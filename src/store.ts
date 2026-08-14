@@ -58,6 +58,11 @@ export interface ChatMsg {
 const UNDO_MS = 6000;
 let nextToast = 1;
 
+/** 无 AI provider 时后端 503 error='ai_not_configured' —— 渲染温和提示而非裸 500。 */
+function aiNotConfigured(e: unknown): boolean {
+  return e instanceof ApiError && e.code === 'ai_not_configured';
+}
+
 export function useStore(boot: Boot) {
   const t = boot.catalog.t;
   const [date, setDate] = useState(() => todayIso());
@@ -262,7 +267,7 @@ export function useStore(boot: Boot) {
         },
       );
     } catch (e) {
-      patch((m) => ({ ...m, error: e instanceof Error ? e.message : String(e), status: 'done' }));
+      patch((m) => ({ ...m, error: aiNotConfigured(e) ? t('ai.notConfigured') : e instanceof Error ? e.message : String(e), status: 'done' }));
     } finally {
       setChatBusy(false);
     }
@@ -455,7 +460,7 @@ export function useStore(boot: Boot) {
       if (r.blocks && r.blocks.length) setDraft({ blocks: r.blocks, note: r.note });
       else push({ label: t('input.noBlocks') });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(aiNotConfigured(e) ? t('ai.notConfigured') : e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }
   }, [date, push, t]);
 
