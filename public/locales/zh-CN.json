@@ -80,7 +80,6 @@
   "well.keep": "资料收好",
   "well.tomorrow": "交给明天",
   "well.someday": "改天再说",
-  "well.replan": "小禾重排",
   "ghost.eyebrow": "想放这儿？",
   "ghost.accept": "就这么办",
   "ghost.reject": "不了",
@@ -199,5 +198,9 @@
   "settings.memory.clearConfirm": "确认清空全部记忆？",
   "settings.memory.cleared": "记忆清空了（每条都进了账本，可撤销）",
   "settings.about.title": "Daycore · 琉璃「长卷」",
-  "settings.about.sub": "每一步都记在账本里 · 任何 AI 动作 3 秒可撤"
+  "settings.about.sub": "每一步都记在账本里 · 任何 AI 动作 3 秒可撤",
+  "well.somedayWish": "想做的事",
+  "well.replanA": "小禾",
+  "well.replanB": "重排",
+  "tag.review": "待回顾"
 }

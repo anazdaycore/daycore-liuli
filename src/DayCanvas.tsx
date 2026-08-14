@@ -4,7 +4,7 @@ import {
   boxOf, canvasHeight, DAY0, DAY1, DEFAULT_DUR, phaseOf, snap5, toHM, toMin, yOf,
   type Well,
 } from './canvas';
-import { Check, Clock, Repeat, Sparkles, Trash, X } from './icons';
+import { Anchor, BookOpen, Check, ChevronRight, Clock, Repeat, Sparkles, Trash, X } from './icons';
 import type { useStore } from './store';
 
 type S = ReturnType<typeof useStore>;
@@ -20,21 +20,26 @@ const WELL_META: { well: Well; cls: string }[] = [
   { well: 'replan', cls: 'br' },
 ];
 
-function wellLabel(t: (k: string) => string, well: Well): string {
-  if (well === 'keep') return t('well.keep');
-  if (well === 'tomorrow') return t('well.tomorrow');
-  if (well === 'someday') return t('well.someday');
-  return t('well.replan');
+function wellIcon(well: Well): React.ReactNode {
+  if (well === 'keep') return <BookOpen size={17} />;
+  if (well === 'tomorrow') return <ChevronRight size={17} />;
+  if (well === 'someday') return <Anchor size={17} />;
+  return <Sparkles size={17} />;
 }
 
-function tagsOf(b: TimeBlock, t: S['t']): string[] {
-  const tags: string[] = [];
-  if (b.origin === 'manual') tags.push(t('tag.manual'));
-  else if (b.origin === 'auto') tags.push(t('tag.auto'));
-  else if (b.origin === 'rule') tags.push(t('tag.rule'));
+function wellNode(t: S['t'], well: Well): React.ReactNode {
+  if (well === 'keep') return <span>{t('well.keep')}</span>;
+  if (well === 'tomorrow') return <span>{t('well.tomorrow')}</span>;
+  if (well === 'someday') return <span>{t('well.somedayWish')}<br />{t('well.someday')}</span>;
+  return <span>{t('well.replanA')}<br />{t('well.replanB')}</span>;
+}
+
+function tagsOf(b: TimeBlock, phase: string, t: S['t']): string[] {
+  const tags: string[] = [b.origin === 'auto' ? t('tag.auto') : t('tag.manual')];
   if (b.lock_level === 'hard') tags.push(t('tag.hard'));
   else if (b.lock_level === 'soft') tags.push(t('tag.soft'));
-  if (b.note) tags.push(t('tag.note'));
+  if (phase === 'recon' && !b.completed) tags.push(t('tag.review'));
+  else if (b.note) tags.push(t('tag.note'));
   return tags.slice(0, 3);
 }
 
@@ -158,9 +163,9 @@ export function DayCanvas({ s }: { s: S }) {
                 <div key={'g:' + p.id} className="cj-ghost"
                   style={{ top: box.top, height: box.height, left: box.left, right: 6, zIndex: 14 + p.lane, '--bc': 'var(--accent)' } as React.CSSProperties}
                   onClick={() => setPop({ kind: 'ghost', id: p.id, x: 0, y: 0 })}>
-                  <span className="q">?</span>
+                  <span className="q">{t('ghost.eyebrow')}</span>
+                  {!box.compact && <div className="tm">{toHM(p.s)} · {t('block.minutes', { n: p.e - p.s })}</div>}
                   <div className="tt">{p.title}</div>
-                  {!box.compact && <div className="tm">{toHM(p.s)} · {p.e - p.s} min</div>}
                 </div>
               );
             }
@@ -173,10 +178,7 @@ export function DayCanvas({ s }: { s: S }) {
                 onPointerDown={onDown(b)}
                 onContextMenu={(ev) => { ev.preventDefault(); setPop({ kind: 'block', id: b.id, x: ev.clientX, y: ev.clientY }); }}>
                 {(b.lock_level === 'hard' || b.lock_level === 'soft') && <span className={'cj-lock' + (b.lock_level === 'soft' ? ' soft' : '')} />}
-                <div className="tm">
-                  <span>{toHM(p.s)}</span>
-                  {b.duration_min ? <span>{t('block.minutes', { n: b.duration_min })}</span> : null}
-                </div>
+                {!box.compact && <div className="tm">{toHM(p.s)}–{toHM(p.s + (b.duration_min ?? DEFAULT_DUR))}</div>}
                 <div className="tt">{b.title}</div>
                 <button className={'cj-tick' + (b.completed ? ' on' : '')}
                   aria-label={t('block.done')}
@@ -184,7 +186,7 @@ export function DayCanvas({ s }: { s: S }) {
                   onClick={(ev) => { ev.stopPropagation(); void s.toggleDone(b); }}>
                   {b.completed ? <Check size={14} strokeWidth={3} /> : null}
                 </button>
-                {!box.compact && (() => { const tg = tagsOf(b, t); return tg.length ? <div className="cj-tags">{tg.map((x, i) => <span key={i} className="cj-tg">{x}</span>)}</div> : null; })()}
+                {!box.compact && (() => { const tg = tagsOf(b, ph, t); return tg.length ? <div className="cj-tags">{tg.map((x, i) => <span key={i} className="cj-tg">{x}</span>)}</div> : null; })()}
                 {ph === 'stone' && <span className="rec">{t('block.record')}</span>}
               </div>
             );
@@ -200,8 +202,8 @@ export function DayCanvas({ s }: { s: S }) {
       <div className={'cj-wells' + (drag ? ' live' : '')}>
         {WELL_META.map(({ well, cls }) => (
           <div key={well} ref={(el) => { wellsRef.current[cls] = el; }} className={'cj-well ' + cls + (drag && drag.hot === well ? ' hot' : '')}>
-            <span className="halo">{well === 'replan' ? <Repeat size={18} /> : well === 'tomorrow' ? <span>→</span> : <span>·</span>}</span>
-            {wellLabel(t, well)}
+            <span className="halo">{wellIcon(well)}</span>
+            {wellNode(t, well)}
           </div>
         ))}
       </div>

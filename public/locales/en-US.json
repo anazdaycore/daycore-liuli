@@ -80,7 +80,6 @@
   "well.keep": "File it",
   "well.tomorrow": "Tomorrow",
   "well.someday": "Another day",
-  "well.replan": "Re-plan",
   "ghost.eyebrow": "Put it here?",
   "ghost.accept": "Do that",
   "ghost.reject": "No thanks",
@@ -199,5 +198,9 @@
   "settings.memory.clearConfirm": "Clear all memories?",
   "settings.memory.cleared": "Memory cleared (each entry is in the ledger, undoable)",
   "settings.about.title": "Daycore · Liuli \"Scroll\"",
-  "settings.about.sub": "Every step is in the ledger · any AI action undoable in 3 seconds"
+  "settings.about.sub": "Every step is in the ledger · any AI action undoable in 3 seconds",
+  "well.somedayWish": "Things I want",
+  "well.replanA": "Xiaohe",
+  "well.replanB": "re-plan",
+  "tag.review": "to review"
 }
