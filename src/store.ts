@@ -455,17 +455,32 @@ export function useStore(boot: Boot) {
   );
 
   const refish = useCallback(
-    (blockId: string) => {
+    async (blockId: string) => {
       const b = plan?.blocks?.find((x) => x.id === blockId);
-      if (!b) return Promise.resolve();
-      const tomorrow = addDaysIso(date, 1);
-      return act(
-        () => api.refishBlock(tomorrow, { title: b.title, type: b.type, time: b.time, duration_min: b.duration_min, rescheduled_from: b.id }),
-        t('undo.refish', { title: b.title }),
-      );
+      try {
+        // 重新安排是提案不是直接落块：产一个 pending timed 虚影，点头才走 refish 链。
+        await api.proposeReschedule(blockId);
+        await refresh();
+        push({ label: t('refish.proposed', { title: b?.title || '' }), sub: t('refish.proposedSub') });
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 409) {
+          const body = e.body as { code?: string; message?: string } | null;
+          if (body?.code === 'refish_capped') push({ label: t('refusal.refishCapped') });
+          else setError(body?.message ?? e.message);
+        } else {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      }
     },
-    [act, date, plan, t],
+    [plan, push, refresh, t],
   );
+
+  const pinRhythm = useCallback(async () => {
+    if (!rhythm) return;
+    await api.pinRhythm(rhythm.wake, rhythm.sleep);
+    await refresh();
+    push({ label: t('trace.rhythm.pinned', { wake: rhythm.wake, sleep: rhythm.sleep }) });
+  }, [rhythm, refresh, push, t]);
 
   const markConflict = useCallback(
     (blockId: string) => act(() => api.markConflict(date, blockId), t('undo.conflict')),
@@ -550,7 +565,8 @@ export function useStore(boot: Boot) {
     [moveToTomorrow, toWish, refish, keepBlock],
   );
 
-  const pieces: Piece[] = piecesFor(plan, proposals);
+  // 只把「当天」的 timed 提案画成轴上的虚影——重新安排的 ghost 落在明天，不能漂到今天。
+  const pieces: Piece[] = piecesFor(plan, proposals.filter((p) => !p.date || p.date === date));
   const timed = (plan?.blocks ?? []).filter((b) => !b.hidden && b.time !== null);
   // Non-timed pending proposals become stack cards, not canvas ghosts.
   const stack = proposals.filter((p) => p.state === 'pending' && !p.start);
@@ -568,7 +584,7 @@ export function useStore(boot: Boot) {
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
     prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
-    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial, rhythm,
+    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial, rhythm, pinRhythm,
     user, doLogin, doRegister, doLogout,
   };
 }
