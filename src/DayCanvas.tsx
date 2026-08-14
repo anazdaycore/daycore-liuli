@@ -297,7 +297,6 @@ export function BlockPop({ id, x, y, s, onClose }: { id: string; x: number; y: n
       {ph !== 'stone' && (
         <div className="cj-marks">
           <button className={'cj-mk' + (b.completed ? ' on' : '')} onClick={() => { void s.setCompleted(b, !b.completed); onClose(); }}>{t('pop.done')}</button>
-          <button className="cj-mk" onClick={() => { void s.removeBlock(b); onClose(); }}>{t('pop.miss')}</button>
         </div>
       )}
       {ph === 'recon' && b.completed === false && (
@@ -306,7 +305,7 @@ export function BlockPop({ id, x, y, s, onClose }: { id: string; x: number; y: n
           <div className="grp">
             <button className="cj-btn sec" onClick={() => { void s.toWish(b); onClose(); }}>{t('pop.lapse.wish')}</button>
             <button className="cj-btn sec" onClick={() => { void s.moveToTomorrow(b); onClose(); }}>{t('pop.lapse.tomorrow')}</button>
-            <button className="cj-btn ghost" onClick={() => { void s.setCompleted(b, false); onClose(); }}>{t('pop.lapse.miss')}</button>
+
           </div>
         </div>
       )}

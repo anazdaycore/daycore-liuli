@@ -88,11 +88,10 @@
   "pop.tomorrow": "Move to tomorrow",
   "pop.tomorrowConfirm": "Move to tomorrow — sure?",
   "pop.remove": "Remove",
-  "pop.miss": "Didn't do it (it's fine)",
+
   "pop.lapse.q": "That window passed and isn't marked — where should it go?",
   "pop.lapse.wish": "Back to things I want",
   "pop.lapse.tomorrow": "Schedule it tomorrow",
-  "pop.lapse.miss": "Let it pass",
   "pop.stone.sub": "It's a record now — the past isn't rewritten; use \"reschedule\" to add a new one.",
   "pop.refish": "Reschedule",
   "pop.note": "Add a note…",
