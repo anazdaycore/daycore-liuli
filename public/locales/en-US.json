@@ -86,6 +86,7 @@
   "pop.done": "Done",
   "pop.conflict": "Mark conflict",
   "pop.tomorrow": "Move to tomorrow",
+  "pop.tomorrowConfirm": "Move to tomorrow — sure?",
   "pop.remove": "Remove",
   "pop.miss": "Didn't do it (it's fine)",
   "pop.lapse.q": "That window passed and isn't marked — where should it go?",

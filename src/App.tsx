@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Boot } from '@daycore/core';
 import { addDaysIso, isoOf, toHM, toMin } from './canvas';
 import { AuthCard } from './Auth';
@@ -84,6 +84,23 @@ export function App({ boot }: { boot: Boot }) {
     if (s.view === 'companion') void s.sendCompanion(tx);
     else void s.submit(tx);
   };
+
+  // 键盘：today 视图 ←/→ 翻日；Esc 关菜单/认证卡/推送卡/草稿（DayCanvas 的 pop 已自行监听 Esc）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenu(false); setPushOpen(false); setAuthOpen(false); s.setDraft(null);
+        return;
+      }
+      if (s.view !== 'today') return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+      if (e.key === 'ArrowLeft') s.setDate(addDaysIso(s.date, -1));
+      else if (e.key === 'ArrowRight') s.setDate(addDaysIso(s.date, 1));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [s.date, s.view, s.setDate, s.setDraft]);
 
   // ⚠️ 用目录 locale（boot 已写进 html lang）而不是浏览器语言，否则中文界面顶栏显示英文日期。
   const dateLabel = useMemo(() => {

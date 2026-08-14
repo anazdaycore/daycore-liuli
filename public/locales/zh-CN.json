@@ -86,6 +86,7 @@
   "pop.done": "完成了",
   "pop.conflict": "标记冲突",
   "pop.tomorrow": "放到明天",
+  "pop.tomorrowConfirm": "确认挪到明天？",
   "pop.remove": "移走",
   "pop.miss": "没做（没关系）",
   "pop.lapse.q": "这段过去了，还没标——它该去哪儿？",

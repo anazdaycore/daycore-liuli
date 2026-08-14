@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TimeBlock } from '@daycore/core';
 import {
-  boxOf, canvasHeight, DAY0, DAY1, DEFAULT_DUR, phaseOf, snap5, toHM, toMin, yOf,
+  boxOf, canvasHeight, DAY0, DAY1, DEFAULT_DUR, PXM_BASE, phaseOf, snap5, toHM, toMin, wellAt, yOf,
   type Well,
 } from './canvas';
 import { Anchor, BookOpen, Check, ChevronRight, Clock, Repeat, Sparkles, Trash, X } from './icons';
@@ -65,14 +65,13 @@ export function DayCanvas({ s }: { s: S }) {
     return () => window.removeEventListener('keydown', esc);
   }, []);
 
-  const hotWell = useCallback((x: number, y: number): Well | null => {
-    for (const { well, cls } of WELL_META) {
-      const el = wellsRef.current[cls];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      if (x >= r.left - 18 && x <= r.right + 18 && y >= r.top - 18 && y <= r.bottom + 18) return well;
-    }
-    return null;
+  const hotWell = useCallback((x: number, y: number, touch: boolean): Well | null => {
+    const tl = wellsRef.current.tl?.getBoundingClientRect();
+    const tr = wellsRef.current.tr?.getBoundingClientRect();
+    const br = wellsRef.current.br?.getBoundingClientRect();
+    if (!tl || !tr || !br) return null;
+    // 井格 = 四井外角构成的矩形；wellAt 的四角恰好对应 4 个井（触屏 -10 / 桌面 +18）。
+    return wellAt(x - tl.left, y - tl.top, tr.right - tl.left, br.bottom - tl.top, touch);
   }, []);
 
   const onDown = (b: TimeBlock) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -104,6 +103,7 @@ export function DayCanvas({ s }: { s: S }) {
           cur.warned = true;
           const el = document.getElementById('cj-blk-' + b.id);
           if (el) { el.classList.remove('tug'); void el.offsetWidth; el.classList.add('tug'); setTimeout(() => el.classList.remove('tug'), 460); }
+          if (navigator.vibrate) navigator.vibrate(12);
           s.push({ label: t('drag.hard', { reason: b.lock_reason || t('drag.hard.reason') }), sub: t('drag.hard.sub') });
         }
         setDrag({ id: cur.id, dy: Math.max(-7, Math.min(7, dy)), hot: null });
@@ -114,7 +114,7 @@ export function DayCanvas({ s }: { s: S }) {
         return;
       }
       cur.moved = true;
-      setDrag({ id: cur.id, dy, hot: hotWell(ev.clientX, ev.clientY) });
+      setDrag({ id: cur.id, dy, hot: hotWell(ev.clientX, ev.clientY, ev.pointerType === 'touch') });
     };
     const up = (ev: PointerEvent) => {
       window.removeEventListener('pointermove', move);
@@ -126,10 +126,10 @@ export function DayCanvas({ s }: { s: S }) {
       setDrag(null);
       if (cur.opened || cur.hard || cur.stone) return;
       if (!cur.moved) { setPop({ kind: 'block', id: b.id, x: ev.clientX + 14, y: ev.clientY - 40 }); return; }
-      const well = hotWell(ev.clientX, ev.clientY);
+      const well = hotWell(ev.clientX, ev.clientY, ev.pointerType === 'touch');
       if (well) { void s.dropInWell(well, b); return; }
       const dy = ev.clientY - cur.y0;
-      const newMin = snap5(toMin(b.time || '09:00') + Math.round(dy / 1.1));
+      const newMin = snap5(toMin(b.time || '09:00') + Math.round(dy / PXM_BASE));
       void s.moveTime(b, newMin);
     };
     window.addEventListener('pointermove', move);
@@ -173,8 +173,9 @@ export function DayCanvas({ s }: { s: S }) {
             }
             const b = p.block as TimeBlock;
             const ph = phaseOf(b, s.date);
-            const cls = 'cj-blk' + (box.stacked ? ' stacked' : '') + (box.compact ? ' compact' : '') + (b.completed ? ' done' : '') + (b.origin === 'auto' ? ' auto' : '') + (ph === 'stone' ? ' stone' : '') + (ph === 'recon' ? ' recon' : '') + (b.lock_level === 'hard' ? ' lk-hard' : b.lock_level === 'soft' ? ' lk-soft' : '');
-            const style: React.CSSProperties = { top: box.top, height: box.height, left: box.left, right: 6, '--lane': p.lane, '--bc': TYPE_VAR[b.type] || 'var(--accent)' } as React.CSSProperties;
+            const isDragging = drag && drag.id === b.id;
+            const cls = 'cj-blk' + (box.stacked ? ' stacked' : '') + (box.compact ? ' compact' : '') + (b.completed ? ' done' : '') + (b.origin === 'auto' ? ' auto' : '') + (ph === 'stone' ? ' stone' : '') + (ph === 'recon' ? ' recon' : '') + (b.lock_level === 'hard' ? ' lk-hard' : b.lock_level === 'soft' ? ' lk-soft' : '') + (isDragging ? ' dragging' : '');
+            const style: React.CSSProperties = { top: box.top, height: box.height, left: box.left, right: 6, '--lane': p.lane, '--bc': TYPE_VAR[b.type] || 'var(--accent)', ...(drag && drag.id === b.id ? { transform: `translateY(${drag.dy}px)` } : {}) } as React.CSSProperties;
             return (
               <div key={'b:' + p.id} id={'cj-blk-' + b.id} className={cls} style={style}
                 onPointerDown={onDown(b)}
@@ -182,12 +183,14 @@ export function DayCanvas({ s }: { s: S }) {
                 {(b.lock_level === 'hard' || b.lock_level === 'soft') && <span className={'cj-lock' + (b.lock_level === 'soft' ? ' soft' : '')} />}
                 {!box.compact && <div className="tm">{toHM(p.s)}–{toHM(p.s + (b.duration_min ?? DEFAULT_DUR))}</div>}
                 <div className="tt">{b.title}</div>
-                <button className={'cj-tick' + (b.completed ? ' on' : '')}
-                  aria-label={t('block.done')}
-                  onPointerDown={(ev) => { ev.stopPropagation(); ev.preventDefault(); }}
-                  onClick={(ev) => { ev.stopPropagation(); void s.toggleDone(b); }}>
-                  {b.completed ? <Check size={14} strokeWidth={3} /> : null}
-                </button>
+                {ph !== 'stone' && (
+                  <button className={'cj-tick' + (b.completed ? ' on' : '')}
+                    aria-label={t('block.done')}
+                    onPointerDown={(ev) => { ev.stopPropagation(); ev.preventDefault(); }}
+                    onClick={(ev) => { ev.stopPropagation(); void s.toggleDone(b); }}>
+                    {b.completed ? <Check size={14} strokeWidth={3} /> : null}
+                  </button>
+                )}
                 {!box.compact && (() => { const tg = tagsOf(b, ph, t); return tg.length ? <div className="cj-tags">{tg.map((x, i) => <span key={i} className="cj-tg">{x}</span>)}</div> : null; })()}
                 {ph === 'stone' && <span className="rec">{t('block.record')}</span>}
               </div>
@@ -241,7 +244,8 @@ export function BlockPop({ id, x, y, s, onClose }: { id: string; x: number; y: n
   const t = s.t;
   const b = s.plan?.blocks?.find((q) => q.id === id);
   const [note, setNote] = useState('');
-  useEffect(() => { if (b) setNote(b.note || ''); }, [id]);
+  const [confirmTomorrow, setConfirmTomorrow] = useState(false);
+  useEffect(() => { if (b) setNote(b.note || ''); setConfirmTomorrow(false); }, [id]);
   if (!b) return null;
   const ph = phaseOf(b, s.date);
   const style: React.CSSProperties = { left: Math.max(10, Math.min(x, window.innerWidth - 316)), top: Math.max(10, Math.min(y, window.innerHeight - 360)) };
@@ -262,7 +266,13 @@ export function BlockPop({ id, x, y, s, onClose }: { id: string; x: number; y: n
           )}
           <button className="cj-btn pri" onClick={() => { void s.setCompleted(b, !b.completed); onClose(); }}><Check size={14} />{t('pop.done')}</button>
           {b.lock_level && <button className="cj-btn sec" onClick={() => { void s.markConflict(b.id); onClose(); }}>{t('pop.conflict')}</button>}
-          {b.lock_level !== 'hard' && <button className="cj-btn sec" onClick={() => { void s.moveToTomorrow(b); onClose(); }}>{t('pop.tomorrow')}</button>}
+          {b.lock_level !== 'hard' && (
+            <button className="cj-btn sec" onClick={() => {
+              if (b.lock_level === 'soft' && !confirmTomorrow) { setConfirmTomorrow(true); setTimeout(() => setConfirmTomorrow(false), 2600); return; }
+              setConfirmTomorrow(false);
+              void s.moveToTomorrow(b); onClose();
+            }}>{b.lock_level === 'soft' && confirmTomorrow ? t('pop.tomorrowConfirm') : t('pop.tomorrow')}</button>
+          )}
           {b.lock_level !== 'hard' && <button className="cj-btn sec" onClick={() => { void s.moveTime(b, Math.min(23 * 60 - 30, toMin(b.time || '09:00') + 30)); onClose(); }}>+30</button>}
           <button className="cj-btn ghost" onClick={() => { void s.removeBlock(b); onClose(); }}><Trash size={13} />{t('pop.remove')}</button>
         </div>

@@ -22,7 +22,7 @@ export function WeekLens({ s }: { s: S }) {
             const blocks = (plan?.blocks ?? []).filter((b) => !b.hidden && b.time !== null);
             const dObj = new Date(d + 'T12:00:00');
             return (
-              <div key={d} className={'cj-wcol glass' + (d === today ? ' today' : '')} onClick={() => s.setDate(d)}>
+              <div key={d} className={'cj-wcol glass' + (d === today ? ' today' : '')} onClick={() => { s.setDate(d); s.setMode('day'); }}>
                 <h5>{dObj.toLocaleDateString(document.documentElement.lang || undefined, { weekday: 'short' })}</h5>
                 <div className="n">{dObj.getDate()}</div>
                 <div className="cj-wbody">
