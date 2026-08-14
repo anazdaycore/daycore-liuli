@@ -220,8 +220,8 @@ input,textarea,select{font:inherit;color:inherit}
 /* 菜单 */
 .cj-menu{position:absolute;right:20px;top:56px;z-index:80;width:280px;border-radius:var(--r-lg);padding:14px 16px;animation:cj-in .22s var(--spring)}
 .cj-menu .who{display:flex;align-items:center;gap:11px;padding-bottom:11px;border-bottom:1px solid var(--line);margin-bottom:11px}
-.cj-menu .who b{font-size:14px}
-.cj-menu .who span{display:block;font-size:11px;color:var(--ink3)}
+.cj-menu .who b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cj-menu .who span{display:block;font-size:11px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cj-menu .lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--ink3);margin:10px 0 6px}
 .cj-mini-themes{display:flex;gap:9px;padding:2px 0;align-items:center;flex-wrap:wrap}
 .cj-mini-themes button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);cursor:pointer;position:relative;transition:transform .15s var(--ease),border-color .15s,box-shadow .15s}
