@@ -7,7 +7,7 @@ import { SettingsPage } from './Settings';
 import { WeekLens } from './WeekLens';
 import {
   Anchor, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Layers, MessageHeart,
-  Mic, Settings, Sun, X, Zap,
+  Mic, Settings, Smile, Sun, X, Zap,
 } from './icons';
 import { useStore } from './store';
 import { BUILTIN_META, BUILTIN_IDS } from './theme';
@@ -80,6 +80,7 @@ export function App({ boot }: { boot: Boot }) {
         )}
         {s.view !== 'today' && <div className="cj-title"><span className="d">{ctx[s.view]}</span></div>}
         <span className="cj-sp"></span>
+        {s.view === 'today' && s.mode === 'day' && <MoodCapsule s={s} />}
         {s.view === 'today' && (
           <button className={'cj-pill glass' + (s.mode === 'week' ? ' on' : '')} onClick={() => s.setMode(s.mode === 'week' ? 'day' : 'week')}>
             <Layers size={14} />{s.mode === 'week' ? t('top.toDay') : t('top.toWeek')}
@@ -216,6 +217,46 @@ export function App({ boot }: { boot: Boot }) {
           </button>
         </nav>
       </footer>
+      )}
+    </div>
+  );
+}
+
+function MoodCapsule({ s }: { s: ReturnType<typeof useStore> }) {
+  const t = s.t;
+  const [open, setOpen] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
+  const [note, setNote] = useState('');
+  const todayKindId = s.moodToday ? s.moodToday.mood : null;
+  const kind = todayKindId ? s.moodKinds.find((k) => k.id === todayKindId) : null;
+  const save = () => {
+    if (!sel) return;
+    const k = s.moodKinds.find((x) => x.id === sel);
+    void s.recordMood(sel, note.trim() || undefined);
+    s.push({ label: t('mood.saved', { name: k ? k.name : '' }) });
+    setSel(null); setNote(''); setOpen(false);
+  };
+  return (
+    <div className="cj-mood">
+      <button className="cj-moodcap glass" onClick={() => setOpen(!open)}>
+        {kind ? <><span className="e">{kind.emoji}</span>{kind.name}</> : <><Smile size={16} />{t('mood.title')}</>}
+      </button>
+      {open && (
+        <div className="cj-moodpick glass">
+          <h4>{kind ? t('mood.picker.qAgain') : t('mood.picker.q')}</h4>
+          <div className="cj-moodgrid">
+            {s.moodKinds.map((k) => (
+              <button key={k.id} className={sel === k.id ? 'on' : ''} onClick={() => setSel(k.id)}>
+                <span className="e">{k.emoji}</span>{k.name}
+              </button>
+            ))}
+          </div>
+          <input placeholder={t('mood.notePlaceholder')} value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') save(); }} />
+          <div className="row">
+            <button className="cj-btn ghost" onClick={() => setOpen(false)}>{t('mood.cancel')}</button>
+            <button className="cj-btn pri" disabled={!sel} onClick={save}>{t('mood.save')}</button>
+          </div>
+        </div>
       )}
     </div>
   );

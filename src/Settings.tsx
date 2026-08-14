@@ -260,9 +260,8 @@ function careSub(t: (k: string) => string, key: string): string {
 export function SettingsPage({ s }: { s: S }) {
   const t = s.t;
   const [name, setName] = useState(s.assistantName);
-  const [l2, setL2] = useState('');
-NaN
-  // 前端无法回显已存值 —— 只能离开输入框时保存，重开为空。
+  // personaPrompt 后端已 GET 回带，打开时填入现值（core Session 类型未更新，经 store 窄断言读）。
+  const [l2, setL2] = useState(s.personaPrompt);
   const saveName = () => { const v = name.trim(); if (v && v !== s.assistantName) { s.saveAssistantName(v); s.push({ label: t('settings.assistant.nameSaved', { name: v }) }); } };
   const saveL2 = () => { if (l2.trim()) { s.savePersonaPrompt(l2); s.push({ label: t('settings.assistant.promptSaved') }); } };
   return (

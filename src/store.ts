@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { ApiError, todayIso } from '@daycore/core';
-import type { Boot, ChannelBinding, CustomTheme, DayPlan, MaterialCategory, MemoryFact, Proposal, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
+import type { Boot, ChannelBinding, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, Proposal, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
 import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
@@ -85,6 +85,10 @@ export function useStore(boot: Boot) {
   const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [memories, setMemories] = useState<MemoryFact[]>([]);
   const [assistantName, setAssistantName] = useState(() => boot.session.assistantName);
+  // ⚠️ personaPrompt 后端已改为 GET 回带（domain.Session json:"personaPrompt"），但 core 的 Session 类型还没这个字段 —— 用窄类型断言读，不碰 core。
+  const personaPrompt = (boot.session as { personaPrompt?: string }).personaPrompt ?? '';
+  const [moodKinds, setMoodKinds] = useState<MoodKind[]>([]);
+  const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
 
   useEffect(() => {
     const h = setInterval(() => setTick(nowMin()), 30_000);
@@ -99,7 +103,7 @@ export function useStore(boot: Boot) {
 
   const refresh = useCallback(async () => {
     try {
-      const [pl, ps, th, ws, ms, pr, ch, ca, me] = await Promise.all([
+      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh] = await Promise.all([
         api.planForDate(date),
         api.proposals(),
         api.themes(),
@@ -109,6 +113,8 @@ export function useStore(boot: Boot) {
         api.channels(),
         api.materialCategories(),
         api.memory(),
+        api.moodKinds(),
+        api.moodHistory(3),
       ]);
       setPlan(pl);
       setProposals(ps.proposals ?? []);
@@ -120,6 +126,9 @@ export function useStore(boot: Boot) {
       setBindings(ch.bindings ?? []);
       setCategories(ca.categories ?? []);
       setMemories(me.facts ?? []);
+      setMoodKinds(mk.kinds ?? []);
+      const todayIsoStr = todayIso();
+      setMoodToday((mh ?? []).find((m) => (m.createdAt || '').slice(0, 10) === todayIsoStr) || null);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -311,6 +320,11 @@ export function useStore(boot: Boot) {
     await refresh();
   }, [refresh]);
 
+  const recordMood = useCallback(async (kindId: string, note?: string) => {
+    await api.recordMood(kindId, note || '');
+    await refresh();
+  }, [refresh]);
+
   // ── theme ──
   const setTheme = useCallback(async (id: string) => {
     setCurrentTheme(id);
@@ -481,8 +495,9 @@ export function useStore(boot: Boot) {
     toggleDone, setCompleted, moveTime, moveToTomorrow, toWish, refish, markConflict, removeBlock, setNote, lockBlock, dropInWell,
     answer, takeRow, takeBack, refresh,
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
-    prefs, channels, bindings, categories, memories, assistantName,
+    prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
+    moodKinds, moodToday, recordMood,
   };
 }
 

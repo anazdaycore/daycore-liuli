@@ -474,3 +474,21 @@ input,textarea,select{font:inherit;color:inherit}
 .cj-toasts{left:246px}
 .cj-previewbar{margin-left:114px}
 }
+/* ── 心情胶囊（对照 cj-parts.jsx） ── */
+.cj-mood{position:relative;z-index:44}
+.cj-moodcap{height:38px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink2);transition:all .2s var(--ease);white-space:nowrap}
+.cj-moodcap:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.cj-moodcap .e{font-size:16px;line-height:1}
+.cj-moodpick{position:absolute;right:0;top:46px;width:284px;border-radius:var(--r-lg);padding:16px;animation:cj-in .25s var(--spring)}
+.cj-moodpick h4{font-size:13px;font-weight:650;margin-bottom:10px}
+.cj-moodgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cj-moodgrid button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border-radius:12px;font-size:11px;color:var(--ink2);transition:all .15s}
+.cj-moodgrid button:hover{background:var(--accent-soft)}
+.cj-moodgrid button.on{background:var(--accent-soft);color:var(--accent);font-weight:650}
+.cj-moodgrid .e{font-size:19px;line-height:1}
+.cj-moodpick input{width:100%;margin-top:10px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--glass2);padding:0 11px;font-size:12.5px;color:var(--ink)}
+.cj-moodpick input:focus{outline:none;border-color:var(--accent)}
+.cj-moodpick .row{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+@media (max-width:760px){
+.cj-moodcap{font-size:0;gap:0;padding:0 11px;height:36px}
+}

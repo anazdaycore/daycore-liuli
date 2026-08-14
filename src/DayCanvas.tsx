@@ -150,8 +150,9 @@ export function DayCanvas({ s }: { s: S }) {
               <i className="ln" />
             </div>
           ))}
-          {s.isToday && s.now >= DAY0 && s.now <= DAY1 && (
-            <div className="cj-now" style={{ top: yOf(s.now) }}>
+          {/* ⚠️ 钳位渲染：now < DAY0 时把 now 丸钳在轴顶，夜里也能看见（对照原型） */}
+          {s.isToday && (
+            <div className="cj-now" style={{ top: Math.max(0, Math.min(canvasHeight(), yOf(s.now))) }}>
               <span className="chip">{toHM(s.now)}</span>
               <i className="ln" />
             </div>

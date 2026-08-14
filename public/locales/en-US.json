@@ -66,8 +66,8 @@
   "block.completed": "done",
   "block.locked": "the time isn't yours to set",
   "block.record": "Record",
-  "tag.manual": "I placed",
-  "tag.auto": "Xiaohe placed",
+  "tag.manual": "Mine",
+  "tag.auto": "Xiaohe's",
   "tag.rule": "From timetable",
   "tag.hard": "Time fixed",
   "tag.soft": "Agreed",
@@ -202,5 +202,12 @@
   "well.somedayWish": "Things I want",
   "well.replanA": "Xiaohe",
   "well.replanB": "re-plan",
-  "tag.review": "to review"
+  "tag.review": "to review",
+  "mood.title": "Today's mood",
+  "mood.picker.q": "How are you feeling?",
+  "mood.picker.qAgain": "Checked in today — pick again to update",
+  "mood.notePlaceholder": "Want to add a word? (optional)",
+  "mood.save": "Save",
+  "mood.cancel": "Not now",
+  "mood.saved": "Mood saved: {name}"
 }

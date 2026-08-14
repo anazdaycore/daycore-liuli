@@ -57,3 +57,4 @@ export const MessageCircle = (p: IconProps) => base(p, <path d="M21 11.5a8.4 8.4
 export const Send = (p: IconProps) => base(p, <path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" />);
 export const ExternalLink = (p: IconProps) => base(p, <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6M10 14L21 3" /></>);
 export const Circle = (p: IconProps) => base(p, <circle cx="12" cy="12" r="9" />);
+export const Smile = (p: IconProps) => base(p, <><circle cx="12" cy="12" r="9" /><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" /></>);
