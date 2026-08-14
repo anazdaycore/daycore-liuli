@@ -58,9 +58,11 @@ export function App({ boot }: { boot: Boot }) {
     void s.submit(tx);
   };
 
+  // ⚠️ 用目录 locale（boot 已写进 html lang）而不是浏览器语言，否则中文界面顶栏显示英文日期。
   const dateLabel = useMemo(() => {
     const d = new Date(s.date + 'T12:00:00');
-    return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) + ' ' + d.toLocaleDateString(undefined, { weekday: 'short' });
+    const lang = document.documentElement.lang || undefined;
+    return d.toLocaleDateString(lang, { month: 'long', day: 'numeric' }) + ' ' + d.toLocaleDateString(lang, { weekday: 'short' });
   }, [s.date]);
 
   return (
