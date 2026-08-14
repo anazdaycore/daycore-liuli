@@ -209,5 +209,11 @@
   "mood.notePlaceholder": "Want to add a word? (optional)",
   "mood.save": "Save",
   "mood.cancel": "Not now",
-  "mood.saved": "Mood saved: {name}"
+  "mood.saved": "Mood saved: {name}",
+  "settings.theme.aiBasedOn": "Based on:",
+  "settings.theme.aiNone": "None",
+  "settings.theme.rename": "Rename",
+  "settings.theme.renameTitle": "Rename theme",
+  "settings.theme.renameSave": "Save",
+  "settings.theme.renamed": "Renamed"
 }

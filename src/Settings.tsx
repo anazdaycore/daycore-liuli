@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import type { CustomTheme } from '@daycore/core';
 import {
   Bell, Check, Circle, Copy, Dumbbell, EyeOff, GraduationCap, Globe, Heart, Key, Moon,
-  MoreHorizontal, NotebookPen, Palette, Plane, Plus, RefreshCw, Send, Settings, Sparkles,
+  MoreHorizontal, NotebookPen, Palette, Pencil, Plane, Plus, RefreshCw, Send, Settings, Sparkles,
   Sun, Trash, Utensils, Wallet, Wand, Zap, MessageCircle,
   type IconProps,
 } from './icons';
@@ -43,11 +43,14 @@ function ThemeStudio({ s }: { s: S }) {
   const [err, setErr] = useState('');
   const [preview, setPreview] = useState<{ name: string; dark: boolean; variables: Record<string, string> } | null>(null);
   const [menu, setMenu] = useState<{ th: CustomTheme; confirm: boolean } | null>(null);
+  const [aiBase, setAiBase] = useState('');
+  const [rename, setRename] = useState<{ th: CustomTheme; val: string } | null>(null);
+  const longPress = useRef<number | null>(null);
 
   const applyCandidate = (cand: { dark: boolean; variables: Record<string, string> }) => {
     const root = document.documentElement;
     root.removeAttribute('style');
-    root.setAttribute('data-theme', cand.dark ? 'night' : 'sky');
+    root.setAttribute('data-theme', cand.dark ? 'night' : (aiBase || 'sky'));
     for (const [k, v] of Object.entries(cand.variables)) root.style.setProperty(k, v);
   };
 
@@ -74,7 +77,7 @@ function ThemeStudio({ s }: { s: S }) {
   const cancelPreview = () => { setPreview(null); void s.setTheme(s.currentTheme); };
   const savePreview = async () => {
     if (!preview) return;
-    const th = await api.saveTheme({ name: preview.name, dark: preview.dark, variables: preview.variables });
+    const th = await api.saveTheme({ name: preview.name, dark: preview.dark, base: aiBase || undefined, variables: preview.variables });
     setPreview(null);
     setAiDesc('');
     await s.refresh();
@@ -90,7 +93,10 @@ function ThemeStudio({ s }: { s: S }) {
   const card = (id: string, name: string, sw: [string, string, string], dark: boolean, th?: CustomTheme) => (
     <button key={id} className={'cj-theme-card' + (s.currentTheme === id ? ' sel' : '')}
       onClick={() => void s.setTheme(id)}
-      onContextMenu={th ? (e) => { e.preventDefault(); setMenu({ th, confirm: false }); } : undefined}>
+      onContextMenu={th ? (e) => { e.preventDefault(); setMenu({ th, confirm: false }); } : undefined}
+      onTouchStart={th ? () => { longPress.current = window.setTimeout(() => setMenu({ th: th as CustomTheme, confirm: false }), 550); } : undefined}
+      onTouchEnd={th ? () => { if (longPress.current) clearTimeout(longPress.current); } : undefined}
+      onTouchMove={th ? () => { if (longPress.current) clearTimeout(longPress.current); } : undefined}>
       <span className="cj-theme-sw" style={{ background: 'linear-gradient(135deg,' + sw[1] + ',' + sw[2] + ')' }}><span className="pill" style={{ background: sw[0] }}></span></span>
       <span className="cj-theme-name">{name}{dark && <span className="dk">{t('theme.dark')}</span>}</span>
       {s.currentTheme === id && <span className="cj-theme-check"><Check size={12} strokeWidth={3} /></span>}
@@ -111,6 +117,13 @@ function ThemeStudio({ s }: { s: S }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 13.5, fontWeight: 650 }}><Wand size={16} style={{ color: 'var(--accent)' }} />{t('settings.theme.aiTitle')}</div>
         <input className="cj-ai-input" placeholder={t('settings.theme.aiPlaceholder')} value={aiDesc}
           onChange={(e) => setAiDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !busy) void generate(); }} />
+        <div className="cj-ai-chips">
+          <span style={{ fontSize: 11.5, color: 'var(--ink3)' }}>{t('settings.theme.aiBasedOn')}</span>
+          <button className={'cj-chip' + (aiBase === '' ? ' on' : '')} onClick={() => setAiBase('')}>{t('settings.theme.aiNone')}</button>
+          {BUILTIN_IDS.map((id) => (
+            <button key={id} className={'cj-chip' + (aiBase === id ? ' on' : '')} onClick={() => setAiBase(id)}>{tn(id)}</button>
+          ))}
+        </div>
         {err && <div className="cj-err">{err}</div>}
         <button className="cj-btn pri" style={{ width: '100%', marginTop: 12, height: 38 }} disabled={busy || !aiDesc.trim()} onClick={() => void generate()}>
           <Sparkles size={15} />{busy ? t('settings.theme.aiBusy') : t('settings.theme.aiGenerate')}
@@ -128,12 +141,24 @@ function ThemeStudio({ s }: { s: S }) {
         <>
           <div className="cj-veil" style={{ background: 'transparent', backdropFilter: 'none' }} onClick={() => setMenu(null)}></div>
           <div className="cj-ctx glass" style={{ left: '50%', top: '40%', transform: 'translate(-50%,-50%)' }} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => { setRename({ th: menu.th, val: menu.th.name }); setMenu(null); }}><Pencil size={14} />{t('settings.theme.rename')}</button>
             <button style={{ color: '#dc2626' }} onClick={() => {
               if (!menu.confirm) { setMenu({ ...menu, confirm: true }); return; }
               const nm = menu.th.name;
               void api.deleteTheme(menu.th.id).then(() => { setMenu(null); void s.refresh(); s.push({ label: t('settings.theme.deleted', { name: nm }) }); });
             }}><Trash size={14} />{menu.confirm ? t('settings.theme.deleteConfirm') : t('settings.theme.delete')}</button>
           </div>
+      {rename && (
+        <div className="cj-ctx glass" style={{ left: '50%', top: '40%', transform: 'translate(-50%,-50%)', width: 240, padding: 12 }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ fontSize: 12.5, fontWeight: 650, marginBottom: 8 }}>{t('settings.theme.renameTitle')}</div>
+          <input className="cj-ai-input" autoFocus value={rename.val} onChange={(e) => setRename({ ...rename, val: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter' && rename.val.trim()) { void api.patchTheme(rename.th.id, { name: rename.val.trim() }).then(() => { setRename(null); void s.refresh(); s.push({ label: t('settings.theme.renamed') }); }); } if (e.key === 'Escape') setRename(null); }} />
+          <div style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
+            <button className="cj-btn sec" style={{ height: 30 }} onClick={() => setRename(null)}>{t('settings.theme.cancel')}</button>
+            <button className="cj-btn pri" style={{ height: 30 }} disabled={!rename.val.trim()} onClick={() => { void api.patchTheme(rename.th.id, { name: rename.val.trim() }).then(() => { setRename(null); void s.refresh(); s.push({ label: t('settings.theme.renamed') }); }); }}>{t('settings.theme.renameSave')}</button>
+          </div>
+        </div>
+      )}
         </>
       )}
     </>

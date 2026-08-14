@@ -143,7 +143,8 @@ export function DayCanvas({ s }: { s: S }) {
   return (
     <div className="cj-stage">
       <div className="cj-scroll" ref={wrap}>
-        <div className="cj-day" style={{ height: canvasHeight() }}>
+        <div className="cj-day">
+          <div className="cj-col" style={{ height: canvasHeight() }}>
           {hours.map((m) => (
             <div key={m} className="cj-hour" style={{ top: yOf(m) }}>
               <span className="hl">{toHM(m)}</span>
@@ -198,6 +199,7 @@ export function DayCanvas({ s }: { s: S }) {
               <span>{t('canvas.emptyBody')}</span>
             </div>
           )}
+          </div>
         </div>
       </div>
       <div className={'cj-wells' + (drag ? ' live' : '')}>

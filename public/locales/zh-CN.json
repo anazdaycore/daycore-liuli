@@ -209,5 +209,11 @@
   "mood.notePlaceholder": "想说一句吗（可空）",
   "mood.save": "记下",
   "mood.cancel": "先不了",
-  "mood.saved": "心情记下了：{name}"
+  "mood.saved": "心情记下了：{name}",
+  "settings.theme.aiBasedOn": "基于：",
+  "settings.theme.aiNone": "不指定",
+  "settings.theme.rename": "重命名",
+  "settings.theme.renameTitle": "重命名主题",
+  "settings.theme.renameSave": "保存",
+  "settings.theme.renamed": "改好了"
 }

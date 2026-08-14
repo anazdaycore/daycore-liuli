@@ -85,8 +85,7 @@ export function useStore(boot: Boot) {
   const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [memories, setMemories] = useState<MemoryFact[]>([]);
   const [assistantName, setAssistantName] = useState(() => boot.session.assistantName);
-  // ⚠️ personaPrompt 后端已改为 GET 回带（domain.Session json:"personaPrompt"），但 core 的 Session 类型还没这个字段 —— 用窄类型断言读，不碰 core。
-  const personaPrompt = (boot.session as { personaPrompt?: string }).personaPrompt ?? '';
+  const personaPrompt = boot.session.personaPrompt ?? '';
   const [moodKinds, setMoodKinds] = useState<MoodKind[]>([]);
   const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
 

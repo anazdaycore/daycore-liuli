@@ -492,3 +492,4 @@ input,textarea,select{font:inherit;color:inherit}
 @media (max-width:760px){
 .cj-moodcap{font-size:0;gap:0;padding:0 11px;height:36px}
 }
+.cj-col{position:relative}
