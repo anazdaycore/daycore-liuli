@@ -23,7 +23,7 @@ export function WeekLens({ s }: { s: S }) {
             const dObj = new Date(d + 'T12:00:00');
             return (
               <div key={d} className={'cj-wcol' + (d === today ? ' today' : '')} onClick={() => s.setDate(d)}>
-                <h5>{dObj.toLocaleDateString(undefined, { weekday: 'short' })}</h5>
+                <h5>{dObj.toLocaleDateString(document.documentElement.lang || undefined, { weekday: 'short' })}</h5>
                 <div className="n">{dObj.getDate()}</div>
                 <div className="cj-wbody">
                   {blocks.map((b) => {
