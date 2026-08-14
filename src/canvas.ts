@@ -171,60 +171,7 @@ export const COMPACT_UNDER = 48;
 export const WELLS = ['keep', 'tomorrow', 'someday', 'replan'] as const;
 export type Well = (typeof WELLS)[number];
 
-/**
- * Which well a drop landed in, or null.
- *
- * ⚠️ NEAREST corner within tolerance, not a quadrant test. Quadrants plus a
- * widening pad create an OVERLAP zone near the centre lines where two wells
- * both claim the point — and the first version resolved that by the order the
- * `if`s happened to be written, which is an accident rather than a decision.
- * Nearest-corner has no ambiguous region: widening makes a target easier to
- * hit, it does not make it win ties.
- *
- * ⚠️ `pad` differs by input, and the corrections point opposite ways. A finger
- * is imprecise but its target is what it COVERS, so the reach is cut — otherwise
- * a drag that merely passed near a corner gets captured on the way past. A
- * pointer is precise but small, so the reach is extended. Same geometry,
- * opposite corrections — see HANDOFF 02 §3.
- */
-export function wellAt(
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  touch: boolean,
-): Well | null {
-  const pad = touch ? -10 : 18;
-  // A corner's pull reaches a quarter of each axis, adjusted by the input.
-  const reachX = w / 4 + pad;
-  const reachY = h / 4 + pad;
-  if (reachX <= 0 || reachY <= 0) return null;
 
-  const corners: { well: Well; cx: number; cy: number }[] = [
-    { well: 'keep', cx: 0, cy: 0 },
-    { well: 'tomorrow', cx: w, cy: 0 },
-    { well: 'someday', cx: 0, cy: h },
-    { well: 'replan', cx: w, cy: h },
-  ];
-
-  let best: Well | null = null;
-  let bestD = Infinity;
-  for (const c of corners) {
-    const dx = Math.abs(x - c.cx);
-    const dy = Math.abs(y - c.cy);
-    if (dx > reachX || dy > reachY) continue;
-    // Normalised, so a tall screen does not make the vertical axis dominate the
-    // choice between two corners that are equally "in reach".
-    const d = (dx / reachX) ** 2 + (dy / reachY) ** 2;
-    if (d < bestD) {
-      bestD = d;
-      best = c.well;
-    }
-  }
-  return best;
-}
-
-// ── phase & day helpers ─────────────────────────────────────────────────────
 
 /**
  * Where a block sits relative to now and to the petrify line.

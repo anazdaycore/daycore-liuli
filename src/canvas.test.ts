@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DayPlan, Proposal, TimeBlock } from '@daycore/core';
 import {
   addDaysIso, boxOf, canvasHeight, COMPACT_UNDER, DAY0, DEFAULT_DUR, laneize,
-  MIN_HEIGHT, PETRIFY_HORIZON_MIN, phaseOf, piecesFor, snap5, toMin, wellAt, yOf,
+  MIN_HEIGHT, PETRIFY_HORIZON_MIN, phaseOf, piecesFor, snap5, toMin, yOf,
 } from './canvas';
 
 const b = (o: Partial<TimeBlock> & { id: string; time: string | null }): TimeBlock => ({
@@ -141,56 +141,7 @@ describe('boxOf', () => {
   });
 });
 
-describe('wellAt', () => {
-  const W = 400;
-  const H = 800;
 
-  it('maps the four corners to the four wells', () => {
-    expect(wellAt(10, 10, W, H, false)).toBe('keep');
-    expect(wellAt(W - 10, 10, W, H, false)).toBe('tomorrow');
-    expect(wellAt(10, H - 10, W, H, false)).toBe('someday');
-    expect(wellAt(W - 10, H - 10, W, H, false)).toBe('replan');
-  });
-
-  // ⚠️ Opposite corrections for opposite input devices. A finger is imprecise
-  // but its target is what it covers, so the box is drawn IN — otherwise a drag
-  // that merely passed near a corner gets captured. A pointer is precise but
-  // small, so the box is widened.
-  it('shrinks the reach for touch and extends it for a pointer', () => {
-    // A point just outside a corner's touch reach but inside its pointer reach.
-    const x = W / 4 + 5;
-    expect(wellAt(x, 10, W, H, false)).toBe('keep'); // pointer: extended, captured
-    expect(wellAt(x, 10, W, H, true)).toBeNull(); // touch: cut back, not captured
-  });
-
-  // ⚠️ No ambiguous region. Quadrants plus a widening pad create an overlap near
-  // the centre lines where two wells both claim the point, and the first version
-  // resolved it by the order the `if`s were written — an accident, not a
-  // decision. Every reachable point now has exactly one nearest corner.
-  it('never lets two wells claim the same point', () => {
-    for (let x = 0; x <= W; x += 7) {
-      for (let y = 0; y <= H; y += 13) {
-        for (const touch of [true, false]) {
-          const a = wellAt(x, y, W, H, touch);
-          const again = wellAt(x, y, W, H, touch);
-          expect(again).toBe(a); // deterministic, and by distance rather than order
-        }
-      }
-    }
-    // The exact centre belongs to nobody.
-    expect(wellAt(W / 2, H / 2, W, H, true)).toBeNull();
-  });
-
-  it('has all four wells, because three reads as lopsided', () => {
-    const seen = new Set([
-      wellAt(10, 10, W, H, false),
-      wellAt(W - 10, 10, W, H, false),
-      wellAt(10, H - 10, W, H, false),
-      wellAt(W - 10, H - 10, W, H, false),
-    ]);
-    expect(seen.size).toBe(4);
-  });
-});
 
 describe('addDaysIso', () => {
   it('adds days across month boundaries', () => {

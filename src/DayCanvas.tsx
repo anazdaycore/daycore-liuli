@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TimeBlock } from '@daycore/core';
 import {
-  boxOf, canvasHeight, DAY0, DAY1, DEFAULT_DUR, PXM_BASE, phaseOf, snap5, toHM, toMin, wellAt, yOf,
+  boxOf, canvasHeight, DAY0, DAY1, DEFAULT_DUR, PXM_BASE, phaseOf, snap5, toHM, toMin, yOf,
   type Well,
 } from './canvas';
 import { Anchor, BookOpen, Check, ChevronRight, Clock, Repeat, Sparkles, Trash, X } from './icons';
@@ -65,13 +65,17 @@ export function DayCanvas({ s }: { s: S }) {
     return () => window.removeEventListener('keydown', esc);
   }, []);
 
+  // ⚠️ 命中 = 看得见的井 ± 输入修正（触屏 -10 收缩 / 桌面 +18 放宽），原型语义。
+  //  曾经用「四井外角矩形 + wellAt 象限」，碰撞箱比井本身大一个数量级——误触。
   const hotWell = useCallback((x: number, y: number, touch: boolean): Well | null => {
-    const tl = wellsRef.current.tl?.getBoundingClientRect();
-    const tr = wellsRef.current.tr?.getBoundingClientRect();
-    const br = wellsRef.current.br?.getBoundingClientRect();
-    if (!tl || !tr || !br) return null;
-    // 井格 = 四井外角构成的矩形；wellAt 的四角恰好对应 4 个井（触屏 -10 / 桌面 +18）。
-    return wellAt(x - tl.left, y - tl.top, tr.right - tl.left, br.bottom - tl.top, touch);
+    const pad = touch ? -10 : 18;
+    for (const { well, cls } of WELL_META) {
+      const el = wellsRef.current[cls];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad) return well;
+    }
+    return null;
   }, []);
 
   const onDown = (b: TimeBlock) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -116,9 +120,21 @@ export function DayCanvas({ s }: { s: S }) {
       cur.moved = true;
       setDrag({ id: cur.id, dy, hot: hotWell(ev.clientX, ev.clientY, ev.pointerType === 'touch') });
     };
+    // pointercancel（触摸被系统抢走/元素被卸载）必须收拾残局：不清 drag 的话
+    // 井层会一直 live、画布停在拖拽中——「界面有时候有点问题」的来源之一。
+    const cancel = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+      const cur = dragRef.current;
+      dragRef.current = null;
+      if (cur?.lp) clearTimeout(cur.lp);
+      setDrag(null);
+    };
     const up = (ev: PointerEvent) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
       const cur = dragRef.current;
       dragRef.current = null;
       if (!cur) return;
@@ -134,6 +150,7 @@ export function DayCanvas({ s }: { s: S }) {
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
   };
 
   const hours: number[] = [];
