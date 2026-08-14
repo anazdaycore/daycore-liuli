@@ -17,8 +17,9 @@ import type { DayPlan, Proposal, TimeBlock } from '@daycore/core';
 export const DAY0 = 6 * 60;
 export const DAY1 = 24 * 60;
 
-/** Pixels per minute at zoom 1. */
-export const PXM_BASE = 1.1;
+/** Pixels per minute at zoom 1. ⚠️ Must match the prototype's PXM (cj-canvas.jsx) or
+ *  blocks drift out of step with the hour ticks and under the floating bar. */
+export const PXM_BASE = 1.05;
 
 export function toMin(hhmm: string): number {
   const [h = '0', m = '0'] = hhmm.split(':');
