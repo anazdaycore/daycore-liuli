@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { FAMILY_ID } from './manifest';
 import { ApiError, todayIso } from '@daycore/core';
-import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
+import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, SessionPrefs, TimeBlock, User, Wish } from '@daycore/core';
 import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
@@ -91,6 +91,7 @@ export function useStore(boot: Boot) {
   const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [memories, setMemories] = useState<MemoryFact[]>([]);
   const [assistantName, setAssistantName] = useState(() => boot.session.assistantName);
+  const [user, setUser] = useState<User | null>(null);
   const personaPrompt = boot.session.personaPrompt ?? '';
   const [moodKinds, setMoodKinds] = useState<MoodKind[]>([]);
   const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
@@ -104,6 +105,11 @@ export function useStore(boot: Boot) {
   useEffect(() => {
     const h = setInterval(() => setTick(nowMin()), 30_000);
     return () => clearInterval(h);
+  }, []);
+
+  // 登录态：boot 后 me() 一次，匿名 user=null 是常态。
+  useEffect(() => {
+    api.me().then((r) => setUser(r.user)).catch(() => {});
   }, []);
 
   const weekStart = useMemo(() => {
@@ -362,6 +368,27 @@ export function useStore(boot: Boot) {
     await refresh();
   }, [refresh]);
 
+  // ── auth ──
+  const doLogin = useCallback(async (email: string, password: string) => {
+    const r = await api.login(email, password);
+    setUser(r.user);
+    await refresh();
+    return r.user;
+  }, [refresh]);
+
+  const doRegister = useCallback(async (email: string, password: string, name?: string) => {
+    const r = await api.register(email, password, name);
+    setUser(r.user);
+    await refresh();
+    return r.user;
+  }, [refresh]);
+
+  const doLogout = useCallback(async () => {
+    await api.logout();
+    setUser(null);
+    await refresh();
+  }, [refresh]);
+
   const setWishStatus = useCallback(async (id: string, status: 'active' | 'done' | 'archived') => {
     await api.updateWish(id, { status });
     await refresh();
@@ -540,6 +567,7 @@ export function useStore(boot: Boot) {
     prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
     moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial, rhythm,
+    user, doLogin, doRegister, doLogout,
   };
 }
 

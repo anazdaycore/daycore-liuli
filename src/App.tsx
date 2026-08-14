@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import type { Boot } from '@daycore/core';
 import { addDaysIso, isoOf, toHM, toMin } from './canvas';
+import { AuthCard } from './Auth';
 import { CompanionPage } from './Companion';
 import { DayCanvas } from './DayCanvas';
 import { MaterialsPage, OutlookPage, TracePage } from './Drawers';
@@ -34,6 +35,7 @@ export function App({ boot }: { boot: Boot }) {
   const [menu, setMenu] = useState(false);
   const [text, setText] = useState('');
   const [pushOpen, setPushOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -146,7 +148,18 @@ export function App({ boot }: { boot: Boot }) {
         <>
           <div className="cj-veil" style={{ background: 'transparent', backdropFilter: 'none' }} onClick={() => setMenu(false)}></div>
           <div className="cj-menu glass">
-            <div className="who"><span className="cj-avatar">{initial}</span><div><b>{boot.session.assistantName}</b><span>{t('menu.tagline')}</span></div></div>
+            <div className="who">
+              <span className="cj-avatar">{s.user && !s.user.isAnonymous ? (s.user.name || s.user.email || '').charAt(0) : initial}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b>{s.user && !s.user.isAnonymous ? (s.user.name || s.user.email) : boot.session.assistantName}</b>
+                <span>{s.user && !s.user.isAnonymous ? (s.user.email ? s.user.email + ' · ' + t('auth.synced') : t('auth.synced')) : t('auth.anonymous') + ' · ' + t('auth.anonymousSub')}</span>
+              </div>
+              {s.user && !s.user.isAnonymous ? (
+                <button className="cj-btn ghost" style={{ height: 28, flex: 'none' }} onClick={() => { void s.doLogout(); setMenu(false); s.push({ label: t('auth.signedOut') }); }}>{t('auth.logout')}</button>
+              ) : (
+                <button className="cj-btn pri" style={{ height: 28, flex: 'none' }} onClick={() => { setMenu(false); setAuthOpen(true); }}>{t('auth.signin')}</button>
+              )}
+            </div>
             <div className="lab">{t('menu.theme')}</div>
             <div className="cj-mini-themes">
               {BUILTIN_IDS.map((id) => (
@@ -206,6 +219,7 @@ export function App({ boot }: { boot: Boot }) {
         </div>
       )}
 
+      {authOpen && <AuthCard s={s} onClose={() => setAuthOpen(false)} />}
       {s.draft && <div className="cj-veil" onClick={() => s.setDraft(null)}></div>}
       {s.draft && (
         <div className="cj-pop glass" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 340, zIndex: 70 } as React.CSSProperties}>
