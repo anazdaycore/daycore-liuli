@@ -1,10 +1,23 @@
 import { useState } from 'react';
 import type { Assignment, OperationLog } from '@daycore/core';
 import { addDaysIso, isoOf, toHM } from './canvas';
-import { Check, Plus, X } from './icons';
+import {
+  Anchor, BookOpen, Check, Heart, Moon, Plus, Trash, Upload, X, Zap,
+} from './icons';
 import type { useStore } from './store';
 
 type S = ReturnType<typeof useStore>;
+
+function Page({ icon, title, note, children }: { icon: React.ReactNode; title: string; note: string; children: React.ReactNode }) {
+  return (
+    <div className="cj-page">
+      <div className="inner">
+        <h2 className="pt"><span className="ic">{icon}</span>{title}<span className="pn">{note}</span></h2>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function actorLabel(actor: string | undefined, t: (k: string) => string): string {
   if (actor === 'agent') return t('trace.agent');
@@ -46,72 +59,162 @@ function dueInfo(dueAt: string | undefined, t: (k: string, v?: Record<string, st
   return { label: t('outlook.dueIn', { n: days }), urgency: 0 };
 }
 
-export function TracePanel({ s }: { s: S }) {
+// ── 资料 ──
+export function MaterialsPage({ s }: { s: S }) {
   const t = s.t;
-  const days = groupByDay(s.ops);
+  const catName = (id: string) => s.categories.find((c) => c.id === id)?.name || id;
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    e.target.value = '';
+    void s.addMaterial(f.name, t('materials.uploadedBody', { kb: Math.round(f.size / 1024) }));
+  };
   return (
-    <div className="cj-grid2">
-      <div>
-        <div className="cj-sec">{t('trace.ledger')}<span className="n">{s.ops.length}</span></div>
-        {days.length === 0 && <div className="cj-item"><div className="bd"><div className="s">{t('trace.empty')}</div></div></div>}
-        {days.map(({ date, rows }) => (
-          <div key={date}>
-            <div className="cj-sec" style={{ letterSpacing: 0, fontWeight: 650 }}>{relDay(date, t)}</div>
-            {rows.map((op) => (
-              <div key={op.id} className="cj-op">
-                <span className="tm">{fmtHM(op.createdAt)}</span>
-                <div className="bd"><div className="lb">{op.summary || op.action}</div></div>
-                <span className={'who' + (op.actor === 'agent' ? '' : ' me')}>{actorLabel(op.actor, t)}</span>
-                <button className="un" onClick={() => void s.takeBack(op.id)}>{t('undo.take')}</button>
-              </div>
-            ))}
-          </div>
-        ))}
+    <Page icon={<BookOpen size={19} />} title={t('drawer.materials')} note={t('materials.note')}>
+      <div className="cj-grid2">
+        <div>
+          <label className="cj-item" style={{ borderStyle: 'dashed', cursor: 'pointer' }}>
+            <span style={{ color: 'var(--accent)', marginTop: 2 }}><Upload size={16} /></span>
+            <div className="bd"><div className="t">{t('materials.upload')}</div><div className="s">{t('materials.uploadSub')}</div></div>
+            <input type="file" style={{ display: 'none' }} onChange={onFile} />
+          </label>
+          <div className="cj-sec">{t('materials.library')}<span className="n">{s.materials.length}</span></div>
+          {s.materials.map((m) => (
+            <div key={m.id} className="cj-item">
+              <span className={'cj-kind' + ((m.category === 'health' || m.category === 'diet' || m.category === 'fitness' || m.category === 'travel') ? ' life' : '')}>{catName(m.category)}</span>
+              <div className="bd"><div className="t">{m.title}</div>{m.summary ? <div className="s">{m.summary}</div> : null}</div>
+              <button className="x" title={t('materials.remove')} onClick={() => void s.deleteMaterial(m.id)}><Trash size={13} /></button>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div className="cj-sec">{t('materials.memory')}<span className="n">{s.memories.length}</span></div>
+          {s.memories.map((m) => (
+            <div key={m.id} className="cj-item">
+              <span className="cj-kind mem">{m.type === 'preference' ? t('settings.memory.preference') : t('settings.memory.wish')}</span>
+              <div className="bd"><div className="t">{m.fact}</div></div>
+              <button className="x" title={t('settings.memory.removed')} onClick={() => void s.deleteMemory(m.id)}><Trash size={13} /></button>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
-export function OutlookPanel({ s }: { s: S }) {
+// ── 足迹 ──
+export function TracePage({ s }: { s: S }) {
+  const t = s.t;
+  const today = isoOf(new Date());
+  const days = Array.from({ length: 15 }, (_, i) => addDaysIso(today, i - 14));
+  const moodByDay = new Map(s.riverMoods.map((m) => [(m.createdAt || '').slice(0, 10), m]));
+  const opsByDay = new Map<string, number>();
+  for (const op of s.ops) { const d = op.date || (op.createdAt || '').slice(0, 10); opsByDay.set(d, (opsByDay.get(d) || 0) + 1); }
+  const maxN = Math.max(1, ...[...opsByDay.values()]);
+  const ledger = groupByDay(s.ops);
+  return (
+    <Page icon={<Anchor size={19} />} title={t('drawer.trace')} note={t('trace.note')}>
+      <div className="cj-grid2">
+        <div>
+          <div className="cj-sec">{t('trace.river')}</div>
+          <div className="cj-river">
+            {days.map((d) => {
+              const mood = moodByDay.get(d);
+              const kind = mood ? s.moodKinds.find((k) => k.id === mood.mood) : null;
+              const count = opsByDay.get(d) || 0;
+              return (
+                <div key={d} className={'cj-rday' + (d === today ? ' today' : '')}>
+                  <span className="e">{kind ? kind.emoji : ''}</span>
+                  <span className="bar" style={{ height: 8 + (count / maxN) * 44 }}></span>
+                  <span className="d">{Number(d.slice(8, 10))}</span>
+                </div>
+              );
+            })}
+          </div>
+          {/* ⚠️ 作息节律：core 无 rhythm() 端点（原型 mock），先静态文案卡，钉住钮不做 */}
+          <div className="cj-item" style={{ marginTop: 14 }}>
+            <span style={{ color: 'var(--accent)', marginTop: 2 }}><Moon size={15} /></span>
+            <div className="bd"><div className="t">{t('trace.rhythm.title')}</div><div className="s">{t('trace.rhythm.body')}</div></div>
+          </div>
+          {/* ⚠️ 周信：无端点，静态文案卡 */}
+          <div className="cj-item" style={{ marginTop: 14 }}>
+            <span style={{ color: 'var(--warm)', marginTop: 2 }}><Heart size={15} /></span>
+            <div className="bd"><div className="t">{t('trace.weekly')}</div><div className="s">{t('trace.weekly.sub')}</div></div>
+          </div>
+        </div>
+        <div>
+          <div className="cj-sec">{t('trace.ledger')}<span className="n">{s.ops.length}</span></div>
+          {ledger.length === 0 && <div className="cj-item"><div className="bd"><div className="s">{t('trace.empty')}</div></div></div>}
+          {ledger.map(({ date, rows }) => (
+            <div key={date}>
+              <div className="cj-sec" style={{ letterSpacing: 0, fontWeight: 650 }}>{relDay(date, t)}</div>
+              {rows.map((op) => (
+                <div key={op.id} className="cj-op">
+                  <span className="tm">{fmtHM(op.createdAt)}</span>
+                  <div className="bd"><div className="lb">{op.summary || op.action}</div></div>
+                  <span className={'who' + (op.actor === 'agent' ? '' : ' me')}>{actorLabel(op.actor, t)}</span>
+                  <button className="un" onClick={() => void s.takeBack(op.id)}>{t('undo.take')}</button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </Page>
+  );
+}
+
+// ── 展望 ──
+export function OutlookPage({ s }: { s: S }) {
   const t = s.t;
   const [wish, setWish] = useState('');
   const addWish = () => { const tx = wish.trim(); if (!tx) return; void s.addWish(tx); setWish(''); s.push({ label: t('outlook.wishAdded') }); };
   const active = s.wishes.filter((w) => w.status === 'active');
+  const tomorrow = s.tomorrowPlan?.blocks?.filter((b) => !b.hidden && b.time !== null) ?? [];
   return (
-    <div className="cj-grid2">
-      <div>
-        <div className="cj-sec">{t('outlook.due')}<span className="n">{s.assignments.length}</span></div>
-        <div className="cj-radar">
-          {s.assignments.map((a: Assignment) => {
-            const info = dueInfo(a.dueAt, t);
-            const course = s.courses.find((c) => c.id === a.courseId);
-            return (
-              <div key={a.id} className="cj-ritem" data-u={info.urgency}>
-                <span className="u" data-u={info.urgency}></span>
-                <div className="bd"><div className="t">{a.title}</div>{course ? <div className="c">{course.name}</div> : null}</div>
-                <span className="dl">{info.label}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div>
-        <div className="cj-sec">{t('outlook.wishes')}<span className="n">{active.length}</span></div>
-        {active.map((w) => (
-          <div key={w.id} className="cj-item">
-            <div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{t('outlook.effort', { n: w.effortMin })}</div> : null}</div>
-            {/* ⚠️ 达成/放下是主操作，常驻可见（.cj-item .x 默认 hover 才显，移动端无 hover） */}
-            <button className="x" title={t('outlook.done')} onClick={() => void s.setWishStatus(w.id, 'done')} style={{ color: 'var(--ok)', opacity: 1 }}><Check size={14} /></button>
-            <button className="x" title={t('outlook.drop')} onClick={() => void s.setWishStatus(w.id, 'archived')} style={{ opacity: 1 }}><X size={13} /></button>
+    <Page icon={<Zap size={19} />} title={t('drawer.outlook')} note={t('outlook.note')}>
+      <div className="cj-grid2">
+        <div>
+          <div className="cj-sec">{t('outlook.due')}<span className="n">{s.assignments.length}</span></div>
+          <div className="cj-radar">
+            {s.assignments.map((a: Assignment) => {
+              const info = dueInfo(a.dueAt, t);
+              const course = s.courses.find((c) => c.id === a.courseId);
+              return (
+                <div key={a.id} className="cj-ritem" data-u={info.urgency}>
+                  <span className="u" data-u={info.urgency}></span>
+                  <div className="bd"><div className="t">{a.title}</div>{course ? <div className="c">{course.name}</div> : null}</div>
+                  <span className="dl">{info.label}</span>
+                </div>
+              );
+            })}
           </div>
-        ))}
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <input placeholder={t('outlook.wishPlaceholder')} value={wish} onChange={(e) => setWish(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addWish(); }}
-            style={{ flex: 1, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--glass2)', padding: '0 12px', fontSize: 12.5, color: 'var(--ink)' }} />
-          <button className="cj-btn sec" onClick={addWish}><Plus size={14} /></button>
+        </div>
+        <div>
+          <div className="cj-sec">{t('outlook.tomorrow')}</div>
+          {tomorrow.length === 0 && <div className="cj-item"><div className="bd"><div className="s">{t('outlook.tomorrowEmpty')}</div></div></div>}
+          {tomorrow.map((b) => (
+            <div key={b.id} className="cj-op" style={{ cursor: 'pointer' }} onClick={() => s.setDate(addDaysIso(isoOf(new Date()), 1))}>
+              <span className="tm">{b.time}</span><div className="bd"><div className="lb">{b.title}</div></div>
+              <span className="who">{b.origin === 'auto' ? t('trace.agent') : t('trace.me')}</span>
+            </div>
+          ))}
+          <div className="cj-sec" style={{ marginTop: 18 }}>{t('outlook.wishes')}<span className="n">{active.length}</span></div>
+          {active.map((w) => (
+            <div key={w.id} className="cj-item">
+              <div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{t('outlook.effort', { n: w.effortMin })}</div> : null}</div>
+              <button className="x" title={t('outlook.done')} onClick={() => void s.setWishStatus(w.id, 'done')} style={{ color: 'var(--ok)', opacity: 1 }}><Check size={14} /></button>
+              <button className="x" title={t('outlook.drop')} onClick={() => void s.setWishStatus(w.id, 'archived')} style={{ opacity: 1 }}><X size={13} /></button>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <input placeholder={t('outlook.wishPlaceholder')} value={wish} onChange={(e) => setWish(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addWish(); }}
+              style={{ flex: 1, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--glass2)', padding: '0 12px', fontSize: 12.5, color: 'var(--ink)' }} />
+            <button className="cj-btn sec" onClick={addWish}><Plus size={14} /></button>
+          </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 

@@ -93,6 +93,8 @@ export function useStore(boot: Boot) {
   const personaPrompt = boot.session.personaPrompt ?? '';
   const [moodKinds, setMoodKinds] = useState<MoodKind[]>([]);
   const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
+  const [riverMoods, setRiverMoods] = useState<MoodCheckin[]>([]);
+  const [tomorrowPlan, setTomorrowPlan] = useState<DayPlan | null>(null);
   const [ops, setOps] = useState<OperationLog[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -110,7 +112,7 @@ export function useStore(boot: Boot) {
 
   const refresh = useCallback(async () => {
     try {
-      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, op, as, co] = await Promise.all([
+      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, tp, op, as, co] = await Promise.all([
         api.planForDate(date),
         api.proposals(),
         api.themes(),
@@ -121,7 +123,8 @@ export function useStore(boot: Boot) {
         api.materialCategories(),
         api.memory(),
         api.moodKinds(),
-        api.moodHistory(3),
+        api.moodHistory(15),
+        api.planForDate(addDaysIso(todayIso(), 1)),
         api.ops(50),
         api.assignments(),
         api.courses(),
@@ -139,6 +142,8 @@ export function useStore(boot: Boot) {
       setMoodKinds(mk.kinds ?? []);
       const todayIsoStr = todayIso();
       setMoodToday((mh ?? []).find((m) => (m.createdAt || '').slice(0, 10) === todayIsoStr) || null);
+      setRiverMoods(mh ?? []);
+      setTomorrowPlan(tp ?? null);
       setOps(op.ops ?? []);
       setAssignments(as.assignments ?? []);
       setCourses(co.courses ?? []);
@@ -343,6 +348,16 @@ export function useStore(boot: Boot) {
     await refresh();
   }, [refresh]);
 
+  const addMaterial = useCallback(async (title: string, body?: string) => {
+    await api.createMaterial({ title, body, category: 'note', source: 'user' });
+    await refresh();
+  }, [refresh]);
+
+  const deleteMaterial = useCallback(async (id: string) => {
+    await api.deleteMaterial(id);
+    await refresh();
+  }, [refresh]);
+
   const setWishStatus = useCallback(async (id: string, status: 'active' | 'done' | 'archived') => {
     await api.updateWish(id, { status });
     await refresh();
@@ -520,7 +535,7 @@ export function useStore(boot: Boot) {
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
     prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
-    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus,
+    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial,
   };
 }
 

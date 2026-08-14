@@ -237,5 +237,22 @@
   "outlook.wishPlaceholder": "想做点什么：想学 / 想去 / 想买…",
   "outlook.wishAdded": "记进想做清单了",
   "top.weekHint": "最多看到一周",
-  "ai.notConfigured": "还没配 AI —— 不是坏了，是还没接上。到设置里给默认模型配上 key 就能用了"
+  "ai.notConfigured": "还没配 AI —— 不是坏了，是还没接上。到设置里给默认模型配上 key 就能用了",
+  "materials.note": "拖进来就自动收好，翻资料随时能改",
+  "materials.upload": "丢个文件进来",
+  "materials.uploadSub": "拖进来就自动收好，需要时我帮你读出重点",
+  "materials.library": "资料库",
+  "materials.memory": "记忆 · 关于你自己",
+  "materials.remove": "移出",
+  "trace.note": "近景是账本，远景是河",
+  "trace.river": "远景 · 十五天的河",
+  "trace.rhythm.title": "作息节律",
+  "trace.rhythm.body": "还没学到数据，先用默认时刻表",
+  "trace.weekly": "周日有一封周信",
+  "trace.weekly.sub": "散文，不是饼图——这周的河、心情与后悔，都会写进去。",
+  "outlook.note": "远期就看这张截止清单",
+  "outlook.tomorrow": "明天一瞥",
+  "outlook.tomorrowEmpty": "明天还是空的，今晚我会悄悄排好一版。",
+  "companion.note": "这里留着聊天记录，直接在下面说",
+  "materials.uploadedBody": "上传的文件 · {kb} KB"
 }

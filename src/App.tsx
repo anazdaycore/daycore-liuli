@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import type { Boot } from '@daycore/core';
 import { addDaysIso, isoOf, toHM, toMin } from './canvas';
-import { Companion } from './Companion';
+import { CompanionPage } from './Companion';
 import { DayCanvas } from './DayCanvas';
-import { OutlookPanel, TracePanel } from './Drawers';
+import { MaterialsPage, OutlookPage, TracePage } from './Drawers';
 import { SettingsPage } from './Settings';
 import { WeekLens } from './WeekLens';
 import {
@@ -55,7 +55,8 @@ export function App({ boot }: { boot: Boot }) {
     if (!tx) return;
     setText('');
     inputRef.current?.focus();
-    void s.submit(tx);
+    if (s.view === 'companion') void s.sendCompanion(tx);
+    else void s.submit(tx);
   };
 
   // ⚠️ 用目录 locale（boot 已写进 html lang）而不是浏览器语言，否则中文界面顶栏显示英文日期。
@@ -81,7 +82,7 @@ export function App({ boot }: { boot: Boot }) {
             {offToday && <button className="cj-pill glass on" onClick={() => s.setDate(isoOf(new Date()))}><Sun size={14} />{t('top.backToday')}</button>}
           </div>
         )}
-        {s.view !== 'today' && <div className="cj-title"><span className="d">{ctx[s.view]}</span></div>}
+        {s.view !== 'today' && <div className="cj-title"><span className="d">{ctx[s.view]}</span><span className="w">{t('top.today')} · {dateLabel}</span></div>}
         <span className="cj-sp"></span>
         {s.view === 'today' && s.mode === 'day' && <MoodCapsule s={s} />}
         {s.view === 'today' && (
@@ -120,10 +121,10 @@ export function App({ boot }: { boot: Boot }) {
       )}
 
       {s.view === 'today' && (s.mode === 'day' ? <DayCanvas s={s} /> : <WeekLens s={s} />)}
-      {s.view === 'materials' && <Drawer title={t('drawer.materials')} side="left" onClose={() => s.setView('today')}>{s.materials.map((m) => <div key={m.id} className="cj-item"><div className="bd"><div className="t">{m.title}</div>{m.summary ? <div className="s">{m.summary}</div> : null}</div></div>)}</Drawer>}
-      {s.view === 'outlook' && <Drawer title={t('drawer.outlook')} side="right" onClose={() => s.setView('today')}><OutlookPanel s={s} /></Drawer>}
-      {s.view === 'trace' && <Drawer title={t('drawer.trace')} side="top" onClose={() => s.setView('today')}><TracePanel s={s} /></Drawer>}
-      {s.view === 'companion' && <Companion s={s} onClose={() => s.setView('today')} />}
+      {s.view === 'materials' && <MaterialsPage s={s} />}
+      {s.view === 'outlook' && <OutlookPage s={s} />}
+      {s.view === 'trace' && <TracePage s={s} />}
+      {s.view === 'companion' && <CompanionPage s={s} />}
       {s.view === 'settings' && <SettingsPage s={s} />}
 
       {s.view === 'today' && s.stack.length > 0 && (
@@ -196,7 +197,6 @@ export function App({ boot }: { boot: Boot }) {
 
       {s.error && <div className="cj-toasts" style={{ bottom: 8 }}><div className="cj-toast glass"><span className="ic" style={{ color: 'var(--warm)' }}><X size={14} /></span><div className="bd"><div className="lb">{s.error}</div></div></div></div>}
 
-      {s.view !== 'companion' && (
       <footer className="cj-bottom">
         <div className="cj-inputbar glass">
           <span className="ctx">{ctx[s.view]}</span>
@@ -220,7 +220,6 @@ export function App({ boot }: { boot: Boot }) {
           </button>
         </nav>
       </footer>
-      )}
     </div>
   );
 }
@@ -265,16 +264,5 @@ function MoodCapsule({ s }: { s: ReturnType<typeof useStore> }) {
   );
 }
 
-function Drawer({ title, side, onClose, children }: { title: string; side: 'left' | 'right' | 'top' | 'bottom'; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <>
-      <div className="cj-veil" onClick={onClose}></div>
-      <div className={'cj-drawer glass ' + side}>
-        <div className="cj-dhead"><h3><span className="ic"></span>{title}</h3><button className="close" onClick={onClose}><X size={16} /></button></div>
-        <div className="cj-dbody">{children}</div>
-      </div>
-    </>
-  );
-}
 
 

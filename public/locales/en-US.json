@@ -237,5 +237,22 @@
   "outlook.wishPlaceholder": "Something you want: learn / go / buy…",
   "outlook.wishAdded": "Added to wishes",
   "top.weekHint": "at most a week",
-  "ai.notConfigured": "AI isn't set up yet — not broken, just not connected. Add a key for the default model in settings"
+  "ai.notConfigured": "AI isn't set up yet — not broken, just not connected. Add a key for the default model in settings",
+  "materials.note": "Drag in and it's filed — browse and edit any time",
+  "materials.upload": "Drop a file here",
+  "materials.uploadSub": "Drag in and it's filed; I'll pull out the key points when you need them",
+  "materials.library": "Library",
+  "materials.memory": "Memory · about you",
+  "materials.remove": "Remove",
+  "trace.note": "Up close it's a ledger, from afar it's a river",
+  "trace.river": "From afar · fifteen days of river",
+  "trace.rhythm.title": "Sleep rhythm",
+  "trace.rhythm.body": "No rhythm learned yet — using the default schedule",
+  "trace.weekly": "A weekly letter on Sunday",
+  "trace.weekly.sub": "Prose, not a pie chart — the week's river, moods and regrets, all written in.",
+  "outlook.note": "The long view is this deadline list",
+  "outlook.tomorrow": "Tomorrow at a glance",
+  "outlook.tomorrowEmpty": "Tomorrow is still empty — I'll quietly lay out a draft tonight.",
+  "companion.note": "Chat history stays here — just type below",
+  "materials.uploadedBody": "Uploaded file · {kb} KB"
 }
