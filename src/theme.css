@@ -534,3 +534,13 @@ input,textarea,select{font:inherit;color:inherit}
 .cj-rday .e{font-size:12px;height:17px;white-space:nowrap}
 .cj-rday .d{font-size:9.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
 .cj-rday.today .d{color:var(--accent);font-weight:700}
+/* ── 推送 chip（对照 changjuan.css） ── */
+.cj-push{display:flex;align-items:center;gap:8px;height:34px;padding:0 6px 0 12px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--ink);max-width:340px;animation:cj-in .3s var(--spring)}
+.cj-push .dot{width:7px;height:7px;border-radius:50%;background:var(--warm);box-shadow:0 0 0 4px color-mix(in srgb,var(--warm) 22%,transparent);animation:cj-breathe 2.2s ease-in-out infinite;flex:none}
+.cj-push .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cj-push-card{position:absolute;top:56px;left:20px;z-index:60;width:330px;border-radius:var(--r-md);padding:16px;animation:cj-in .25s var(--spring)}
+.cj-push-card h4{font-size:14px;margin-bottom:5px}
+.cj-push-card p{font-size:13px;color:var(--ink2);text-wrap:pretty}
+.cj-push-card .row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+/* 周透镜完成块绿纹 */
+.cj-wblk.done{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--ok) 60%,transparent) 0 4px,color-mix(in srgb,var(--ok) 30%,transparent) 4px 8px)}

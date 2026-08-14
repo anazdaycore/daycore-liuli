@@ -16,7 +16,7 @@ export function CompanionPage({ s }: { s: S }) {
       <div className="inner narrow">
         <h2 className="pt"><span className="ic"><MessageHeart size={19} /></span>{t('drawer.companion')} · {s.assistantName}<span className="pn">{t('companion.note')}</span></h2>
         <div className="cj-chat">
-          {s.chat.length === 0 && !s.chatBusy && <div className="cj-sub" style={{ padding: '4px 0' }}>{t('companion.empty')}</div>}
+          {s.chat.length === 0 && !s.chatBusy && <div className="cj-sub" style={{ padding: '4px 0' }}>{t('companion.empty', { name: s.assistantName })}</div>}
           {s.chat.map((m) => {
             if (m.role === 'assistant' && m.status === 'streaming' && !m.content && !m.error && !m.reasoning && !(m.tools?.length) && !m.decision) return null;
             return <Msg key={m.id} m={m} s={s} />;

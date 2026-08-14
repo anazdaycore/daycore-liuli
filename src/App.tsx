@@ -7,7 +7,7 @@ import { MaterialsPage, OutlookPage, TracePage } from './Drawers';
 import { SettingsPage } from './Settings';
 import { WeekLens } from './WeekLens';
 import {
-  Anchor, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Layers, MessageHeart,
+  Anchor, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Layers, Link, MessageHeart,
   Mic, Settings, Smile, Sun, X, Zap,
 } from './icons';
 import { useStore } from './store';
@@ -17,10 +17,10 @@ function ctxOf(t: (k: string) => string): Record<string, string> {
   return { today: t('ctx.today'), materials: t('ctx.materials'), outlook: t('ctx.outlook'), trace: t('ctx.trace'), companion: t('ctx.companion'), settings: t('ctx.settings') };
 }
 
-function phOf(t: (k: string) => string): Record<string, string> {
+function phOf(t: (k: string, vars?: Record<string, string | number>) => string, name: string): Record<string, string> {
   return {
     today: t('input.placeholder.today'), materials: t('input.placeholder.materials'), outlook: t('input.placeholder.outlook'),
-    trace: t('input.placeholder.trace'), companion: t('input.placeholder.companion'), settings: t('input.placeholder.settings'),
+    trace: t('input.placeholder.trace'), companion: t('input.placeholder.companion', { name }), settings: t('input.placeholder.settings'),
   };
 }
 
@@ -33,9 +33,31 @@ export function App({ boot }: { boot: Boot }) {
   const t = boot.catalog.t;
   const [menu, setMenu] = useState(false);
   const [text, setText] = useState('');
+  const [pushOpen, setPushOpen] = useState(false);
+  const [listening, setListening] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const ctx = ctxOf(t);
-  const ph = phOf(t);
+  const ph = phOf(t, boot.session.assistantName);
+  const SpeechRecognition = typeof window !== 'undefined' ? ((window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition) : null;
+  const hasSpeech = !!SpeechRecognition;
+  const startVoice = () => {
+    if (!SpeechRecognition) return;
+    const rec = new (SpeechRecognition as new () => { lang: string; interimResults: boolean; onresult: (e: { results: { 0: { 0: { transcript: string } } } }) => void; onend: () => void; onerror: () => void; start: () => void })();
+    rec.lang = document.documentElement.lang || 'zh-CN';
+    rec.interimResults = false;
+    rec.onresult = (e) => { setText((prev) => (prev ? prev + ' ' : '') + e.results[0][0].transcript); setListening(false); };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    setListening(true);
+    rec.start();
+  };
+  const onAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    e.target.value = '';
+    void s.addMaterial(f.name, t('materials.uploadedBody', { kb: Math.round(f.size / 1024) }));
+  };
   const tn = themeNames(t);
   const initial = boot.session.assistantName.charAt(0);
 
@@ -71,6 +93,32 @@ export function App({ boot }: { boot: Boot }) {
       <div className="cj-orbs"></div>
 
       <header className="cj-top">
+        {s.view === 'today' && s.proposals.filter((p) => p.state === 'pending').length > 0 && (
+          <div style={{ position: 'relative' }}>
+            <button className="cj-push glass" onClick={() => setPushOpen(!pushOpen)}>
+              <span className="dot" />
+              <span className="t">{t('push.label', { n: s.proposals.filter((p) => p.state === 'pending').length })}</span>
+            </button>
+            {pushOpen && (
+              <div className="cj-push-card glass" style={{ width: 340 }}>
+                {s.proposals.filter((p) => p.state === 'pending').map((p) => (
+                  <div key={p.id} style={{ marginBottom: 14 }}>
+                    <h4>{p.title}</h4>
+                    {p.summary ? <p>{p.summary}</p> : null}
+                    {p.rows && p.rows.length > 0 ? (
+                      <div className="cj-rows">{p.rows.map((r) => <button key={r.id} className="cj-btn sec" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => { void s.takeRow(p, r.id); setPushOpen(false); }}>{r.label}</button>)}</div>
+                    ) : (
+                      <div className="row">
+                        <button className="cj-btn pri" onClick={() => { void s.answer(p, true); setPushOpen(false); }}>{t('ghost.accept')}</button>
+                        <button className="cj-btn sec" onClick={() => { void s.answer(p, false); setPushOpen(false); }}>{t('ghost.reject')}</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {s.view === 'today' && (
           <div className="cj-nav">
             <button className="cj-navbtn" onClick={() => s.setDate(addDaysIso(s.date, s.mode === 'week' ? -7 : -1))}><ChevronLeft size={17} /></button>
@@ -85,12 +133,12 @@ export function App({ boot }: { boot: Boot }) {
         {s.view !== 'today' && <div className="cj-title"><span className="d">{ctx[s.view]}</span><span className="w">{t('top.today')} · {dateLabel}</span></div>}
         <span className="cj-sp"></span>
         {s.view === 'today' && s.mode === 'day' && <MoodCapsule s={s} />}
+        <span className="cj-clock glass" title={t('top.clockTitle')}>{toHM(s.now)}</span>
         {s.view === 'today' && (
           <button className={'cj-pill glass' + (s.mode === 'week' ? ' on' : '')} onClick={() => s.setMode(s.mode === 'week' ? 'day' : 'week')}>
             <Layers size={14} />{s.mode === 'week' ? t('top.toDay') : t('top.toWeek')}
           </button>
         )}
-        <span className="cj-clock glass">{toHM(s.now)}</span>
         <button className="cj-avatar" onClick={() => setMenu(!menu)}>{initial}</button>
       </header>
 
@@ -202,8 +250,10 @@ export function App({ boot }: { boot: Boot }) {
           <span className="ctx">{ctx[s.view]}</span>
           <input ref={inputRef} placeholder={ph[s.view]} value={text}
             onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit(); }} />
-          <button className="mic" title={t('input.mic')}><Mic size={16} /></button>
+          <button className="mic" title={t('input.attach')} onClick={() => fileRef.current?.click()}><Link size={15} /></button>
+          {hasSpeech && <button className={'mic' + (listening ? ' on' : '')} title={t('input.mic')} onClick={startVoice}><Mic size={16} /></button>}
           <button className="send" disabled={!text.trim() || s.busy} onClick={submit}><ArrowUp size={16} /></button>
+          <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={onAttach} />
         </div>
         <nav className="cj-dock glass">
           <div className="cj-rail-logo"><span className="dot"></span>{t('menu.brand')}</div>

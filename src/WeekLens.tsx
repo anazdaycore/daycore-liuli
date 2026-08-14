@@ -1,5 +1,5 @@
 import type { DayPlan, TimeBlock } from '@daycore/core';
-import { addDaysIso, isoOf, toMin } from './canvas';
+import { addDaysIso, isoOf, phaseOf, toMin } from './canvas';
 import type { useStore } from './store';
 
 type S = ReturnType<typeof useStore>;
@@ -30,10 +30,22 @@ export function WeekLens({ s }: { s: S }) {
                     const s0 = toMin(b.time || '09:00');
                     const top = ((s0 - 6 * 60) / (18 * 60)) * 100;
                     const h = Math.max(3, ((b.duration_min || 45) / (18 * 60)) * 100);
+                    const ph = phaseOf(b, d);
+                    const cls = 'cj-wblk' + (ph === 'stone' ? ' stonew' : b.origin === 'auto' ? ' auto' : '') + (b.completed ? ' done' : '');
                     return (
-                      <div key={b.id} className={'cj-wblk' + (b.origin === 'auto' ? ' auto' : '')}
+                      <div key={b.id} className={cls}
                         style={{ top: top + '%', height: h + '%', '--bc': TYPE_VAR[b.type] || 'var(--accent)' } as React.CSSProperties}
                         title={b.title} />
+                    );
+                  })}
+                  {s.proposals.filter((p) => p.state === 'pending' && p.date === d && p.start).map((g) => {
+                    const s0 = toMin(g.start || '09:00');
+                    const top = ((s0 - 6 * 60) / (18 * 60)) * 100;
+                    const h = Math.max(5, ((g.dur || 45) / (18 * 60)) * 100);
+                    return (
+                      <div key={'g:' + g.id} className="cj-wblk ghostw"
+                        style={{ top: top + '%', height: h + '%', '--bc': 'var(--c-' + (g.btype || 'task') + ')' } as React.CSSProperties}
+                        title={g.title} />
                     );
                   })}
                 </div>

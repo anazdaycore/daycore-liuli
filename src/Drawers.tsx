@@ -19,16 +19,17 @@ function Page({ icon, title, note, children }: { icon: React.ReactNode; title: s
   );
 }
 
-function actorLabel(actor: string | undefined, t: (k: string) => string): string {
-  if (actor === 'agent') return t('trace.agent');
+function actorLabel(actor: string | undefined, agent: string, t: (k: string) => string): string {
+  if (actor === 'agent') return agent;
   if (actor === 'system') return t('trace.system');
   return t('trace.me');
 }
 
+// ⚠️ 用浏览器本地日分组（createdAt 是 UTC，slice(0,10) 会切成 UTC 日导致跨日错位）
 function groupByDay(ops: OperationLog[]): { date: string; rows: OperationLog[] }[] {
   const map = new Map<string, OperationLog[]>();
   for (const op of ops) {
-    const d = op.date || (op.createdAt || '').slice(0, 10);
+    const d = isoOf(new Date(op.createdAt));
     if (!map.has(d)) map.set(d, []);
     map.get(d)!.push(op);
   }
@@ -47,16 +48,28 @@ function fmtHM(iso: string): string {
   return toHM(d.getHours() * 60 + d.getMinutes());
 }
 
-function dueInfo(dueAt: string | undefined, t: (k: string, v?: Record<string, string | number>) => string): { label: string; urgency: number } {
-  if (!dueAt) return { label: '', urgency: 0 };
-  const due = dueAt.slice(0, 10);
+// 绝对式截止标签（照 zhiyu panels.tsx dueLabel）：今天/明天 HH:MM，其余「周日 8月16日 HH:MM」
+function dueLabel(due: string, t: (k: string, v?: Record<string, string | number>) => string): string {
+  const d = new Date(due);
+  if (Number.isNaN(d.getTime())) return '';
+  const lang = document.documentElement.lang || undefined;
+  const hm = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+  const date = isoOf(d);
   const today = isoOf(new Date());
-  const days = Math.round((new Date(due + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86400000);
-  if (days < 0) return { label: t('outlook.overdue'), urgency: 2 };
-  if (days === 0) return { label: t('outlook.dueToday'), urgency: 2 };
-  if (days === 1) return { label: t('outlook.dueTomorrow'), urgency: 2 };
-  if (days <= 3) return { label: t('outlook.dueIn', { n: days }), urgency: 1 };
-  return { label: t('outlook.dueIn', { n: days }), urgency: 0 };
+  if (date === today) return t('outlook.dueToday') + ' ' + hm;
+  if (date === addDaysIso(today, 1)) return t('outlook.dueTomorrow') + ' ' + hm;
+  const wd = new Intl.DateTimeFormat(lang, { weekday: 'short' }).format(d);
+  const md = new Intl.DateTimeFormat(lang, { month: 'long', day: 'numeric' }).format(d);
+  return wd + ' ' + md + ' ' + hm;
+}
+
+// 小时级紧迫度（照 zhiyu panels.tsx urgencyOf）：<26h 强调、<76h 次之、其余淡
+function urgencyOf(dueAt: string | undefined): number {
+  if (!dueAt) return 0;
+  const ms = new Date(dueAt).getTime();
+  if (Number.isNaN(ms)) return 0;
+  const dh = (ms - Date.now()) / 3600e3;
+  return dh < 26 ? 2 : dh < 76 ? 1 : 0;
 }
 
 // ── 资料 ──
@@ -109,7 +122,7 @@ export function TracePage({ s }: { s: S }) {
   const days = Array.from({ length: 15 }, (_, i) => addDaysIso(today, i - 14));
   const moodByDay = new Map(s.riverMoods.map((m) => [(m.createdAt || '').slice(0, 10), m]));
   const opsByDay = new Map<string, number>();
-  for (const op of s.ops) { const d = op.date || (op.createdAt || '').slice(0, 10); opsByDay.set(d, (opsByDay.get(d) || 0) + 1); }
+  for (const op of s.ops) { const d = isoOf(new Date(op.createdAt)); opsByDay.set(d, (opsByDay.get(d) || 0) + 1); }
   const maxN = Math.max(1, ...[...opsByDay.values()]);
   const ledger = groupByDay(s.ops);
   return (
@@ -155,7 +168,7 @@ export function TracePage({ s }: { s: S }) {
                 <div key={op.id} className="cj-op">
                   <span className="tm">{fmtHM(op.createdAt)}</span>
                   <div className="bd"><div className="lb">{op.summary || op.action}</div></div>
-                  <span className={'who' + (op.actor === 'agent' ? '' : ' me')}>{actorLabel(op.actor, t)}</span>
+                  <span className={'who' + (op.actor === 'agent' ? '' : ' me')}>{actorLabel(op.actor, s.assistantName, t)}</span>
                   <button className="un" onClick={() => void s.takeBack(op.id)}>{t('undo.take')}</button>
                 </div>
               ))}
@@ -181,12 +194,12 @@ export function OutlookPage({ s }: { s: S }) {
           <div className="cj-sec">{t('outlook.due')}<span className="n">{s.assignments.length}</span></div>
           <div className="cj-radar">
             {s.assignments.map((a: Assignment) => {
-              const info = dueInfo(a.dueAt, t);
+              const info = { label: dueLabel(a.dueAt || '', t), urgency: urgencyOf(a.dueAt) };
               const course = s.courses.find((c) => c.id === a.courseId);
               return (
                 <div key={a.id} className="cj-ritem" data-u={info.urgency}>
                   <span className="u" data-u={info.urgency}></span>
-                  <div className="bd"><div className="t">{a.title}</div>{course ? <div className="c">{course.name}</div> : null}</div>
+                  <div className="bd"><div className="t">{a.title}</div>{course ? <div className="c">{course.courseCode || course.name}</div> : null}</div>
                   <span className="dl">{info.label}</span>
                 </div>
               );
@@ -199,7 +212,7 @@ export function OutlookPage({ s }: { s: S }) {
           {tomorrow.map((b) => (
             <div key={b.id} className="cj-op" style={{ cursor: 'pointer' }} onClick={() => s.setDate(addDaysIso(isoOf(new Date()), 1))}>
               <span className="tm">{b.time}</span><div className="bd"><div className="lb">{b.title}</div></div>
-              <span className="who">{b.origin === 'auto' ? t('trace.agent') : t('trace.me')}</span>
+              <span className="who">{b.origin === 'auto' ? s.assistantName : t('trace.me')}</span>
             </div>
           ))}
           <div className="cj-sec" style={{ marginTop: 18 }}>{t('outlook.wishes')}<span className="n">{active.length}</span></div>
