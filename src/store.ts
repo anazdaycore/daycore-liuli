@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
+import { FAMILY_ID } from './manifest';
 import { ApiError, todayIso } from '@daycore/core';
 import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
 import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
@@ -72,7 +73,7 @@ export function useStore(boot: Boot) {
   const [week, setWeek] = useState<DayPlan[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [themes, setThemes] = useState<CustomTheme[]>([]);
-  const [currentTheme, setCurrentTheme] = useState(() => boot.session.currentTheme || 'sky');
+  const [currentTheme, setCurrentTheme] = useState(() => api.themeForFamily(boot.session, FAMILY_ID) || 'sky');
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [materials, setMaterials] = useState<api.Material[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);

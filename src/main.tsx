@@ -8,7 +8,7 @@ import { isFirstRun } from '@daycore/core';
 import { bootstrapCatalog, type Catalog } from '@daycore/core';
 import * as api from '@daycore/core';
 import { applyTheme } from './theme';
-import { manifest } from './manifest';
+import { FAMILY_ID, manifest } from './manifest';
 
 // ⚠️ The packs 长卷 SHIPS, in public/locales/. Passed in rather than read from
 // @daycore/core, because each of the four frontends ships a different set — a
@@ -66,9 +66,9 @@ function Root() {
         // reads as a broken install, so the fallback is the build's default sky.
         try {
           const { themes } = await api.themes();
-          applyTheme(document.documentElement, b.session.currentTheme || 'sky', themes);
+          applyTheme(document.documentElement, api.themeForFamily(b.session, FAMILY_ID) || 'sky', themes);
         } catch {
-          applyTheme(document.documentElement, b.session.currentTheme || 'sky', []);
+          applyTheme(document.documentElement, api.themeForFamily(b.session, FAMILY_ID) || 'sky', []);
         }
         if (b.deferred.length) {
           console.info('waiting on operator approval before these can be themed:', b.deferred.join(', '));
