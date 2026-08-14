@@ -61,7 +61,9 @@ export function App({ boot }: { boot: Boot }) {
     void s.addMaterial(f.name, t('materials.uploadedBody', { kb: Math.round(f.size / 1024) }));
   };
   const tn = themeNames(t);
-  const initial = boot.session.assistantName.charAt(0);
+  // ⚠️ 头像与菜单 who 是「用户」不是助手：已登录取用户姓名首字，匿名用「我」——
+  //  wire 上没有匿名的用户名字段，把 assistantName 摆进 who 区会让人以为账户是助手的。
+  const initial = (s.user && !s.user.isAnonymous ? (s.user.name || s.user.email || '') : t('trace.me')).charAt(0);
 
   const seats = [
     { id: 'materials', label: t('dock.materials'), icon: <BookOpen size={20} /> },
@@ -151,8 +153,8 @@ export function App({ boot }: { boot: Boot }) {
             <div className="who">
               <span className="cj-avatar">{s.user && !s.user.isAnonymous ? (s.user.name || s.user.email || '').charAt(0) : initial}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <b>{s.user && !s.user.isAnonymous ? (s.user.name || s.user.email) : boot.session.assistantName}</b>
-                <span>{s.user && !s.user.isAnonymous ? (s.user.email ? s.user.email + ' · ' + t('auth.synced') : t('auth.synced')) : t('auth.anonymous') + ' · ' + t('auth.anonymousSub')}</span>
+                <b>{s.user && !s.user.isAnonymous ? (s.user.name || s.user.email) : t('auth.anonymous')}</b>
+                <span>{s.user && !s.user.isAnonymous ? (s.user.email ? s.user.email + ' · ' + t('auth.synced') : t('auth.synced')) : t('auth.anonymousSub')}</span>
               </div>
               {s.user && !s.user.isAnonymous ? (
                 <button className="cj-btn ghost" style={{ height: 28, flex: 'none' }} onClick={() => { void s.doLogout(); setMenu(false); s.push({ label: t('auth.signedOut') }); }}>{t('auth.logout')}</button>
@@ -279,7 +281,7 @@ export function App({ boot }: { boot: Boot }) {
           })}
           <button className="cj-rail-user" onClick={() => setMenu(!menu)}>
             <span className="cj-avatar" style={{ width: 32, height: 32, fontSize: 12, flex: 'none' }}>{initial}</span>
-            <span className="meta"><span className="name">{boot.session.assistantName}</span><span className="sub">{t('menu.settings')}</span></span>
+            <span className="meta"><span className="name">{s.user && !s.user.isAnonymous ? (s.user.name || s.user.email) : t('auth.anonymous')}</span><span className="sub">{t('menu.settings')}</span></span>
             <Settings size={15} style={{ color: 'var(--ink3)', flex: 'none' }} />
           </button>
         </nav>
