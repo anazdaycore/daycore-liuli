@@ -511,8 +511,8 @@ input,textarea,select{font:inherit;color:inherit}
 .cj-op.undone .lb{text-decoration:line-through;color:var(--ink3)}
 .cj-op .who{flex:none;font-size:9.5px;font-weight:700;letter-spacing:.06em;border-radius:5px;padding:1px 5px;margin-top:3px;color:var(--accent);background:var(--accent-soft)}
 .cj-op .who.me{color:var(--ink3);background:color-mix(in srgb,var(--ink3) 12%,transparent)}
-.cj-op .un{flex:none;font-size:11px;font-weight:650;color:var(--accent);opacity:0;transition:opacity .15s;padding-top:2px}
-.cj-op:hover .un{opacity:1}
+/* ⚠️ 撤销是一等功能（语气体系核心），常驻可见，不做 hover 显现 */
+.cj-op .un{flex:none;font-size:11px;font-weight:650;color:var(--accent);opacity:1;padding-top:2px}
 .cj-op .un:hover{text-decoration:underline}
 .cj-radar{display:flex;flex-direction:column;gap:7px}
 .cj-ritem{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:13px;background:var(--glass2);border:1px solid var(--line)}
