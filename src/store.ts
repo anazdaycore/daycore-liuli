@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { FAMILY_ID } from './manifest';
 import { ApiError } from '@daycore/core';
-import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, SessionPrefs, TimeBlock, User, Wish } from '@daycore/core';
+import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, RiverDay, SessionPrefs, TimeBlock, User, WeeklyLetter, Wish } from '@daycore/core';
 import { addDaysIso, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
@@ -98,7 +98,8 @@ export function useStore(boot: Boot) {
   const personaPrompt = boot.session.personaPrompt ?? '';
   const [moodKinds, setMoodKinds] = useState<MoodKind[]>([]);
   const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
-  const [riverMoods, setRiverMoods] = useState<MoodCheckin[]>([]);
+  const [river, setRiver] = useState<RiverDay[]>([]);
+  const [letter, setLetter] = useState<WeeklyLetter | null>(null);
   const [tomorrowPlan, setTomorrowPlan] = useState<DayPlan | null>(null);
   const [rhythm, setRhythm] = useState<Rhythm | null>(null);
   const [ops, setOps] = useState<OperationLog[]>([]);
@@ -123,7 +124,7 @@ export function useStore(boot: Boot) {
 
   const refresh = useCallback(async () => {
     try {
-      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, tp, op, as, co, rh] = await Promise.all([
+      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, tp, op, as, co, rh, rv, wl] = await Promise.all([
         api.planForDate(date),
         api.proposals(),
         api.themes(),
@@ -140,6 +141,8 @@ export function useStore(boot: Boot) {
         api.assignments(),
         api.courses(),
         api.rhythm(),
+        api.river(15),
+        api.weeklyLetter(),
       ]);
       setPlan(pl);
       setProposals(ps.proposals ?? []);
@@ -153,7 +156,8 @@ export function useStore(boot: Boot) {
       setMemories(me.facts ?? []);
       setMoodKinds(mk.kinds ?? []);
       setMoodToday((mh ?? []).find((m) => m.createdAt && api.dayIsoInTZ(new Date(m.createdAt), TZ) === today) || null);
-      setRiverMoods(mh ?? []);
+      setRiver(rv ?? []);
+      setLetter(wl?.letter ?? null);
       setTomorrowPlan(tp ?? null);
       setOps(op.ops ?? []);
       setAssignments(as.assignments ?? []);
@@ -391,8 +395,8 @@ export function useStore(boot: Boot) {
     await refresh();
   }, [refresh]);
 
-  const setWishStatus = useCallback(async (id: string, status: 'active' | 'done' | 'archived') => {
-    await api.updateWish(id, { status });
+  const setWishStatus = useCallback(async (id: string, status: 'active' | 'done' | 'dropped') => {
+    await api.updateWish(id, { status: status as 'active' | 'done' | 'archived' });
     await refresh();
   }, [refresh]);
 
@@ -584,7 +588,7 @@ export function useStore(boot: Boot) {
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
     prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
-    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial, rhythm, pinRhythm,
+    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, river, letter, tomorrowPlan, addMaterial, deleteMaterial, rhythm, pinRhythm,
     user, doLogin, doRegister, doLogout,
   };
 }

@@ -3,7 +3,7 @@ import { dayIsoInTZ } from '@daycore/core';
 import type { Assignment, OperationLog } from '@daycore/core';
 import { addDaysIso, minutesInTZ, toHM } from './canvas';
 import {
-  Anchor, BookOpen, Check, Heart, Moon, Plus, Trash, Upload, X, Zap,
+  Anchor, BookOpen, Check, Heart, Moon, Plus, RefreshCw, Trash, Upload, X, Zap,
 } from './icons';
 import type { useStore } from './store';
 
@@ -118,12 +118,7 @@ export function MaterialsPage({ s }: { s: S }) {
 // ── 足迹 ──
 export function TracePage({ s }: { s: S }) {
   const t = s.t;
-  const today = s.today;
-  const days = Array.from({ length: 15 }, (_, i) => addDaysIso(today, i - 14));
-  const moodByDay = new Map(s.riverMoods.map((m) => [m.createdAt ? dayIsoInTZ(new Date(m.createdAt), s.tz) : '', m]));
-  const opsByDay = new Map<string, number>();
-  for (const op of s.ops) { const d = dayIsoInTZ(new Date(op.createdAt), s.tz); opsByDay.set(d, (opsByDay.get(d) || 0) + 1); }
-  const maxN = Math.max(1, ...[...opsByDay.values()]);
+  const maxN = Math.max(1, ...s.river.map((r) => r.count));
   const ledger = groupByDay(s.ops, s.tz);
   return (
     <Page icon={<Anchor size={19} />} title={t('drawer.trace')} note={t('trace.note')}>
@@ -131,18 +126,13 @@ export function TracePage({ s }: { s: S }) {
         <div>
           <div className="cj-sec">{t('trace.river')}</div>
           <div className="cj-river">
-            {days.map((d) => {
-              const mood = moodByDay.get(d);
-              const kind = mood ? s.moodKinds.find((k) => k.id === mood.mood) : null;
-              const count = opsByDay.get(d) || 0;
-              return (
-                <div key={d} className={'cj-rday' + (d === today ? ' today' : '')}>
-                  <span className="e">{kind ? kind.emoji : ''}</span>
-                  <span className="bar" style={{ height: 8 + (count / maxN) * 44 }}></span>
-                  <span className="d">{Number(d.slice(8, 10))}</span>
-                </div>
-              );
-            })}
+            {s.river.map((r) => (
+              <div key={r.date} className={'cj-rday' + (r.date === s.today ? ' today' : '')}>
+                <span className="e">{r.mood || ''}</span>
+                <span className="bar" style={{ height: 8 + (r.count / maxN) * 44 }}></span>
+                <span className="d">{Number(r.date.slice(8, 10))}</span>
+              </div>
+            ))}
           </div>
           <div className="cj-item" style={{ marginTop: 14 }}>
             <span style={{ color: 'var(--accent)', marginTop: 2 }}><Moon size={15} /></span>
@@ -154,10 +144,12 @@ export function TracePage({ s }: { s: S }) {
               {s.rhythm?.source === 'pinned' ? t('trace.rhythm.pinnedShort') : t('trace.rhythm.pin')}
             </button>
           </div>
-          {/* ⚠️ 周信：无端点，静态文案卡 */}
           <div className="cj-item" style={{ marginTop: 14 }}>
             <span style={{ color: 'var(--warm)', marginTop: 2 }}><Heart size={15} /></span>
-            <div className="bd"><div className="t">{t('trace.weekly')}</div><div className="s">{t('trace.weekly.sub')}</div></div>
+            <div className="bd">
+              <div className="t">{t('trace.weekly')}</div>
+              {s.letter ? <div className="s" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: 'var(--ink2)' }}>{s.letter.body}</div> : <div className="s">{t('trace.weekly.sub')}</div>}
+            </div>
           </div>
         </div>
         <div>
@@ -188,6 +180,8 @@ export function OutlookPage({ s }: { s: S }) {
   const [wish, setWish] = useState('');
   const addWish = () => { const tx = wish.trim(); if (!tx) return; void s.addWish(tx); setWish(''); s.push({ label: t('outlook.wishAdded') }); };
   const active = s.wishes.filter((w) => w.status === 'active');
+  const doneWishes = s.wishes.filter((w) => w.status === 'done');
+  const droppedWishes = s.wishes.filter((w) => (w.status as string) === 'dropped');
   const tomorrow = s.tomorrowPlan?.blocks?.filter((b) => !b.hidden && b.time !== null) ?? [];
   return (
     <Page icon={<Zap size={19} />} title={t('drawer.outlook')} note={t('outlook.note')}>
@@ -222,7 +216,19 @@ export function OutlookPage({ s }: { s: S }) {
             <div key={w.id} className="cj-item">
               <div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{t('outlook.effort', { n: w.effortMin })}</div> : null}</div>
               <button className="x" title={t('outlook.done')} onClick={() => void s.setWishStatus(w.id, 'done')} style={{ color: 'var(--ok)', opacity: 1 }}><Check size={14} /></button>
-              <button className="x" title={t('outlook.drop')} onClick={() => void s.setWishStatus(w.id, 'archived')} style={{ opacity: 1 }}><X size={13} /></button>
+              <button className="x" title={t('outlook.drop')} onClick={() => void s.setWishStatus(w.id, 'dropped')} style={{ opacity: 1 }}><X size={13} /></button>
+            </div>
+          ))}
+          {doneWishes.map((w) => (
+            <div key={w.id} className="cj-item" style={{ opacity: 0.55 }}>
+              <div className="bd"><div className="t" style={{ textDecoration: 'line-through' }}>{w.title}</div></div>
+              <button className="x" title={t('outlook.restore')} onClick={() => void s.setWishStatus(w.id, 'active')} style={{ opacity: 1 }}><RefreshCw size={13} /></button>
+            </div>
+          ))}
+          {droppedWishes.map((w) => (
+            <div key={w.id} className="cj-item" style={{ opacity: 0.35 }}>
+              <div className="bd"><div className="t">{w.title}</div></div>
+              <button className="x" title={t('outlook.restore')} onClick={() => void s.setWishStatus(w.id, 'active')} style={{ opacity: 1 }}><RefreshCw size={13} /></button>
             </div>
           ))}
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

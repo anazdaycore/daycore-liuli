@@ -232,6 +232,7 @@
   "outlook.effort": "~{n} min",
   "outlook.done": "done",
   "outlook.drop": "let go",
+  "outlook.restore": "restore",
   "outlook.wishPlaceholder": "Something you want: learn / go / buy…",
   "outlook.wishAdded": "Added to wishes",
   "top.weekHint": "at most a week",
