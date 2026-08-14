@@ -76,7 +76,7 @@ export function DayCanvas({ s }: { s: S }) {
 
   const onDown = (b: TimeBlock) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
-    const ph = phaseOf(b, s.date);
+    const ph = phaseOf(b, s.date, s.today, s.now);
     const hard = b.lock_level === 'hard';
     const stone = ph === 'stone';
     (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
@@ -172,7 +172,7 @@ export function DayCanvas({ s }: { s: S }) {
               );
             }
             const b = p.block as TimeBlock;
-            const ph = phaseOf(b, s.date);
+            const ph = phaseOf(b, s.date, s.today, s.now);
             const isDragging = drag && drag.id === b.id;
             const cls = 'cj-blk' + (box.stacked ? ' stacked' : '') + (box.compact ? ' compact' : '') + (b.completed ? ' done' : '') + (b.origin === 'auto' ? ' auto' : '') + (ph === 'stone' ? ' stone' : '') + (ph === 'recon' ? ' recon' : '') + (b.lock_level === 'hard' ? ' lk-hard' : b.lock_level === 'soft' ? ' lk-soft' : '') + (isDragging ? ' dragging' : '');
             const style: React.CSSProperties = { top: box.top, height: box.height, left: box.left, right: 6, '--lane': p.lane, '--bc': TYPE_VAR[b.type] || 'var(--accent)', ...(drag && drag.id === b.id ? { transform: `translateY(${drag.dy}px)` } : {}) } as React.CSSProperties;
@@ -247,7 +247,7 @@ export function BlockPop({ id, x, y, s, onClose }: { id: string; x: number; y: n
   const [confirmTomorrow, setConfirmTomorrow] = useState(false);
   useEffect(() => { if (b) setNote(b.note || ''); setConfirmTomorrow(false); }, [id]);
   if (!b) return null;
-  const ph = phaseOf(b, s.date);
+  const ph = phaseOf(b, s.date, s.today, s.now);
   const style: React.CSSProperties = { left: Math.max(10, Math.min(x, window.innerWidth - 316)), top: Math.max(10, Math.min(y, window.innerHeight - 360)) };
   return (
     <div className="cj-pop glass" style={style}>

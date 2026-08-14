@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { FAMILY_ID } from './manifest';
-import { ApiError, todayIso } from '@daycore/core';
+import { ApiError } from '@daycore/core';
 import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, SessionPrefs, TimeBlock, User, Wish } from '@daycore/core';
-import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
+import { addDaysIso, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
 // 长卷's state. Same discipline as the other three — no optimistic updates —
@@ -66,7 +66,10 @@ function aiNotConfigured(e: unknown): boolean {
 
 export function useStore(boot: Boot) {
   const t = boot.catalog.t;
-  const [date, setDate] = useState(() => todayIso());
+  // 会话时区：今天/现在都必须用它算，不能信浏览器本地（demo 可能按别的时区播种）。
+  const TZ = api.sessionTimezone(boot.session);
+  const today = api.todayIsoInTZ(TZ);
+  const [date, setDate] = useState(() => today);
   const [mode, setMode] = useState<Mode>('day');
   const [view, setView] = useState<View>('today');
   const [plan, setPlan] = useState<DayPlan | null>(null);
@@ -80,7 +83,7 @@ export function useStore(boot: Boot) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [tick, setTick] = useState(() => nowMin());
+  const [tick, setTick] = useState(() => api.nowMinutesInTZ(TZ));
   const [threadId, setThreadId] = useState<string | null>(null);
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [chatBusy, setChatBusy] = useState(false);
@@ -103,7 +106,7 @@ export function useStore(boot: Boot) {
   const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
-    const h = setInterval(() => setTick(nowMin()), 30_000);
+    const h = setInterval(() => setTick(api.nowMinutesInTZ(TZ)), 30_000);
     return () => clearInterval(h);
   }, []);
 
@@ -132,7 +135,7 @@ export function useStore(boot: Boot) {
         api.memory(),
         api.moodKinds(),
         api.moodHistory(15),
-        api.planForDate(addDaysIso(todayIso(), 1)),
+        api.planForDate(addDaysIso(today, 1)),
         api.ops(50),
         api.assignments(),
         api.courses(),
@@ -149,8 +152,7 @@ export function useStore(boot: Boot) {
       setCategories(ca.categories ?? []);
       setMemories(me.facts ?? []);
       setMoodKinds(mk.kinds ?? []);
-      const todayIsoStr = todayIso();
-      setMoodToday((mh ?? []).find((m) => (m.createdAt || '').slice(0, 10) === todayIsoStr) || null);
+      setMoodToday((mh ?? []).find((m) => m.createdAt && api.dayIsoInTZ(new Date(m.createdAt), TZ) === today) || null);
       setRiverMoods(mh ?? []);
       setTomorrowPlan(tp ?? null);
       setOps(op.ops ?? []);
@@ -262,7 +264,7 @@ export function useStore(boot: Boot) {
     setChatBusy(true);
     const patch = (fn: (m: ChatMsg) => ChatMsg) =>
       setChat((prev) => prev.map((m) => (m.id === asstId ? fn(m) : m)));
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tz = TZ || Intl.DateTimeFormat().resolvedOptions().timeZone;
     try {
       await api.streamCompanion(
         { message: text, timezone: tz, threadId },
@@ -552,10 +554,10 @@ export function useStore(boot: Boot) {
   const timed = (plan?.blocks ?? []).filter((b) => !b.hidden && b.time !== null);
   // Non-timed pending proposals become stack cards, not canvas ghosts.
   const stack = proposals.filter((p) => p.state === 'pending' && !p.start);
-  const isToday = date === todayIso();
+  const isToday = date === today;
 
   return {
-    t, push, locale: boot.catalog.locale, date, setDate, mode, setMode, view, setView, isToday,
+    t, push, locale: boot.catalog.locale, date, setDate, mode, setMode, view, setView, isToday, today, tz: TZ,
     weekStart, week, plan, pieces, proposals, stack,
     themes, currentTheme, setTheme, wishes, materials,
     toasts, dismiss, busy, error, draft, setDraft, confirmDraft, submit,

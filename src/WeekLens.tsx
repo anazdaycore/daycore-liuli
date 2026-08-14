@@ -1,5 +1,5 @@
 import type { DayPlan, TimeBlock } from '@daycore/core';
-import { addDaysIso, isoOf, phaseOf, toMin } from './canvas';
+import { addDaysIso, phaseOf, toMin } from './canvas';
 import type { useStore } from './store';
 
 type S = ReturnType<typeof useStore>;
@@ -12,7 +12,7 @@ export function WeekLens({ s }: { s: S }) {
   const days: string[] = [];
   for (let i = 0; i < 7; i++) days.push(addDaysIso(s.weekStart, i));
   const planByDate = new Map<string, DayPlan>((s.week ?? []).map((p) => [p.date, p]));
-  const today = isoOf(new Date());
+  const today = s.today;
   return (
     <div className="cj-stage">
       <div className="cj-scroll">
@@ -30,7 +30,7 @@ export function WeekLens({ s }: { s: S }) {
                     const s0 = toMin(b.time || '09:00');
                     const top = ((s0 - 6 * 60) / (18 * 60)) * 100;
                     const h = Math.max(3, ((b.duration_min || 45) / (18 * 60)) * 100);
-                    const ph = phaseOf(b, d);
+                    const ph = phaseOf(b, d, s.today, s.now);
                     const cls = 'cj-wblk' + (ph === 'stone' ? ' stonew' : b.origin === 'auto' ? ' auto' : '') + (b.completed ? ' done' : '');
                     return (
                       <div key={b.id} className={cls}

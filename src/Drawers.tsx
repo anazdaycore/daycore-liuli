@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { dayIsoInTZ } from '@daycore/core';
 import type { Assignment, OperationLog } from '@daycore/core';
-import { addDaysIso, isoOf, toHM } from './canvas';
+import { addDaysIso, minutesInTZ, toHM } from './canvas';
 import {
   Anchor, BookOpen, Check, Heart, Moon, Plus, Trash, Upload, X, Zap,
 } from './icons';
@@ -25,41 +26,40 @@ function actorLabel(actor: string | undefined, agent: string, t: (k: string) => 
   return t('trace.me');
 }
 
-// ⚠️ 用浏览器本地日分组（createdAt 是 UTC，slice(0,10) 会切成 UTC 日导致跨日错位）
-function groupByDay(ops: OperationLog[]): { date: string; rows: OperationLog[] }[] {
+// ⚠️ createdAt 是 UTC，必须折到会话时区再按日分组（否则跨日错位）。
+function groupByDay(ops: OperationLog[], tz: string): { date: string; rows: OperationLog[] }[] {
   const map = new Map<string, OperationLog[]>();
   for (const op of ops) {
-    const d = isoOf(new Date(op.createdAt));
+    const d = dayIsoInTZ(new Date(op.createdAt), tz);
     if (!map.has(d)) map.set(d, []);
     map.get(d)!.push(op);
   }
   return [...map.entries()].map(([date, rows]) => ({ date, rows }));
 }
 
-function relDay(date: string, t: (k: string) => string): string {
-  const today = isoOf(new Date());
+function relDay(date: string, today: string, t: (k: string) => string): string {
   if (date === today) return t('trace.today');
   if (date === addDaysIso(today, -1)) return t('trace.yesterday');
   return date;
 }
 
-function fmtHM(iso: string): string {
-  const d = new Date(iso);
-  return toHM(d.getHours() * 60 + d.getMinutes());
+function fmtHM(iso: string, tz: string): string {
+  return toHM(minutesInTZ(new Date(iso), tz));
 }
 
 // 绝对式截止标签（照 zhiyu panels.tsx dueLabel）：今天/明天 HH:MM，其余「周日 8月16日 HH:MM」
-function dueLabel(due: string, t: (k: string, v?: Record<string, string | number>) => string): string {
+function dueLabel(due: string, tz: string, today: string, t: (k: string, v?: Record<string, string | number>) => string): string {
   const d = new Date(due);
   if (Number.isNaN(d.getTime())) return '';
   const lang = document.documentElement.lang || undefined;
-  const hm = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
-  const date = isoOf(d);
-  const today = isoOf(new Date());
+  const fmt = (opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(lang, tz ? { ...opts, timeZone: tz } : opts).format(d);
+  const hm = fmt({ hour: '2-digit', minute: '2-digit', hour12: false });
+  const date = dayIsoInTZ(d, tz);
   if (date === today) return t('outlook.dueToday') + ' ' + hm;
   if (date === addDaysIso(today, 1)) return t('outlook.dueTomorrow') + ' ' + hm;
-  const wd = new Intl.DateTimeFormat(lang, { weekday: 'short' }).format(d);
-  const md = new Intl.DateTimeFormat(lang, { month: 'long', day: 'numeric' }).format(d);
+  const wd = fmt({ weekday: 'short' });
+  const md = fmt({ month: 'long', day: 'numeric' });
   return wd + ' ' + md + ' ' + hm;
 }
 
@@ -118,13 +118,13 @@ export function MaterialsPage({ s }: { s: S }) {
 // ── 足迹 ──
 export function TracePage({ s }: { s: S }) {
   const t = s.t;
-  const today = isoOf(new Date());
+  const today = s.today;
   const days = Array.from({ length: 15 }, (_, i) => addDaysIso(today, i - 14));
-  const moodByDay = new Map(s.riverMoods.map((m) => [(m.createdAt || '').slice(0, 10), m]));
+  const moodByDay = new Map(s.riverMoods.map((m) => [m.createdAt ? dayIsoInTZ(new Date(m.createdAt), s.tz) : '', m]));
   const opsByDay = new Map<string, number>();
-  for (const op of s.ops) { const d = isoOf(new Date(op.createdAt)); opsByDay.set(d, (opsByDay.get(d) || 0) + 1); }
+  for (const op of s.ops) { const d = dayIsoInTZ(new Date(op.createdAt), s.tz); opsByDay.set(d, (opsByDay.get(d) || 0) + 1); }
   const maxN = Math.max(1, ...[...opsByDay.values()]);
-  const ledger = groupByDay(s.ops);
+  const ledger = groupByDay(s.ops, s.tz);
   return (
     <Page icon={<Anchor size={19} />} title={t('drawer.trace')} note={t('trace.note')}>
       <div className="cj-grid2">
@@ -163,10 +163,10 @@ export function TracePage({ s }: { s: S }) {
           {ledger.length === 0 && <div className="cj-item"><div className="bd"><div className="s">{t('trace.empty')}</div></div></div>}
           {ledger.map(({ date, rows }) => (
             <div key={date}>
-              <div className="cj-sec" style={{ letterSpacing: 0, fontWeight: 650 }}>{relDay(date, t)}</div>
+              <div className="cj-sec" style={{ letterSpacing: 0, fontWeight: 650 }}>{relDay(date, s.today, t)}</div>
               {rows.map((op) => (
                 <div key={op.id} className="cj-op">
-                  <span className="tm">{fmtHM(op.createdAt)}</span>
+                  <span className="tm">{fmtHM(op.createdAt, s.tz)}</span>
                   <div className="bd"><div className="lb">{op.summary || op.action}</div></div>
                   <span className={'who' + (op.actor === 'agent' ? '' : ' me')}>{actorLabel(op.actor, s.assistantName, t)}</span>
                   <button className="un" onClick={() => void s.takeBack(op.id)}>{t('undo.take')}</button>
@@ -194,7 +194,7 @@ export function OutlookPage({ s }: { s: S }) {
           <div className="cj-sec">{t('outlook.due')}<span className="n">{s.assignments.length}</span></div>
           <div className="cj-radar">
             {s.assignments.map((a: Assignment) => {
-              const info = { label: dueLabel(a.dueAt || '', t), urgency: urgencyOf(a.dueAt) };
+              const info = { label: dueLabel(a.dueAt || '', s.tz, s.today, t), urgency: urgencyOf(a.dueAt) };
               const course = s.courses.find((c) => c.id === a.courseId);
               return (
                 <div key={a.id} className="cj-ritem" data-u={info.urgency}>
@@ -210,7 +210,7 @@ export function OutlookPage({ s }: { s: S }) {
           <div className="cj-sec">{t('outlook.tomorrow')}</div>
           {tomorrow.length === 0 && <div className="cj-item"><div className="bd"><div className="s">{t('outlook.tomorrowEmpty')}</div></div></div>}
           {tomorrow.map((b) => (
-            <div key={b.id} className="cj-op" style={{ cursor: 'pointer' }} onClick={() => s.setDate(addDaysIso(isoOf(new Date()), 1))}>
+            <div key={b.id} className="cj-op" style={{ cursor: 'pointer' }} onClick={() => s.setDate(addDaysIso(s.today, 1))}>
               <span className="tm">{b.time}</span><div className="bd"><div className="lb">{b.title}</div></div>
               <span className="who">{b.origin === 'auto' ? s.assistantName : t('trace.me')}</span>
             </div>

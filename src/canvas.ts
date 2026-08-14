@@ -31,10 +31,6 @@ export function toHM(min: number): string {
   return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
 }
 
-export function nowMin(now = new Date()): number {
-  return now.getHours() * 60 + now.getMinutes();
-}
-
 /** Where a minute sits on the canvas. */
 export function yOf(min: number, pxm = PXM_BASE): number {
   return (min - DAY0) * pxm;
@@ -248,25 +244,31 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-/** YYYY-MM-DD in the local zone. */
-export function isoOf(d: Date): string {
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+/** Minutes (0-1439) of an absolute instant in an IANA zone; the browser's own
+ *  zone when `tz` is empty. The ledger's HH:MM needs the SESSION's zone, not the
+ *  browser's — same reason todayIsoInTZ / nowMinutesInTZ exist. */
+export function minutesInTZ(d: Date, tz: string): number {
+  const opts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+  const fmt = tz ? new Intl.DateTimeFormat('en-US', { ...opts, timeZone: tz }) : new Intl.DateTimeFormat('en-US', opts);
+  const parts = fmt.formatToParts(d);
+  const get = (t: string) => Number(parts.find((x) => x.type === t)?.value ?? '0');
+  return get('hour') * 60 + get('minute');
 }
 
 /** Add n days to an ISO date, keeping it wall-clock safe. */
 export function addDaysIso(iso: string, n: number): string {
   const d = new Date(iso + 'T12:00:00');
   d.setDate(d.getDate() + n);
-  return isoOf(d);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export function phaseOf(block: TimeBlock, date: string, now = new Date()): Phase {
+/** Phase of a block on `date`, given the session's `today` and `nowMin` (both
+ *  already resolved in the SESSION zone — see store.ts). Pure: no Date here. */
+export function phaseOf(block: TimeBlock, date: string, today: string, nowMin: number): Phase {
   if (block.time == null) return 'future';
   const start = toMin(block.time);
   const end = start + (block.duration_min ?? DEFAULT_DUR);
-  const today = isoOf(now);
   if (date > today) return 'future';
-  const nowMin = now.getHours() * 60 + now.getMinutes();
   if (date < today) {
     // Only "last night" is still editable — and only until the horizon.
     if (date === addDaysIso(today, -1) && nowMin < PETRIFY_HORIZON_MIN) return 'recon';

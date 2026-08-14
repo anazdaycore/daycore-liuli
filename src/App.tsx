@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Boot } from '@daycore/core';
-import { addDaysIso, isoOf, toHM, toMin } from './canvas';
+import { addDaysIso, toHM, toMin } from './canvas';
 import { AuthCard } from './Auth';
 import { CompanionPage } from './Companion';
 import { DayCanvas } from './DayCanvas';
@@ -73,7 +73,7 @@ export function App({ boot }: { boot: Boot }) {
     { id: 'companion', label: t('dock.companion'), icon: <MessageHeart size={20} /> },
   ] as const;
 
-  const offToday = s.mode !== 'day' || s.date !== isoOf(new Date());
+  const offToday = s.mode !== 'day' || s.date !== s.today;
   const nb = s.view === 'today' ? s.total : 0;
 
   const submit = () => {
@@ -148,7 +148,7 @@ export function App({ boot }: { boot: Boot }) {
               <span className="w">{s.mode === 'week' ? t('top.weekHint') : dateLabel + (nb ? ' · ' + nb + ' ' + t('top.count') : '')}</span>
             </div>
             <button className="cj-navbtn" onClick={() => s.setDate(addDaysIso(s.date, s.mode === 'week' ? 7 : 1))}><ChevronRight size={17} /></button>
-            {offToday && <button className="cj-pill glass on" onClick={() => s.setDate(isoOf(new Date()))}><Sun size={14} />{t('top.backToday')}</button>}
+            {offToday && <button className="cj-pill glass on" onClick={() => s.setDate(s.today)}><Sun size={14} />{t('top.backToday')}</button>}
           </div>
         )}
         {s.view !== 'today' && <div className="cj-title"><span className="d">{ctx[s.view]}</span><span className="w">{t('top.today')} · {dateLabel}</span></div>}
@@ -292,7 +292,7 @@ export function App({ boot }: { boot: Boot }) {
           <div className="cj-rail-logo"><span className="dot"></span>{t('menu.brand')}</div>
           {seats.map((seat) => {
             if (seat.id === 'today') {
-              return <button key={seat.id} className={'cj-seat home' + (s.view === 'today' && !offToday ? '' : ' off')} onClick={() => { s.setView('today'); s.setDate(isoOf(new Date())); s.setMode('day'); }}>{seat.icon}{seat.label}</button>;
+              return <button key={seat.id} className={'cj-seat home' + (s.view === 'today' && !offToday ? '' : ' off')} onClick={() => { s.setView('today'); s.setDate(s.today); s.setMode('day'); }}>{seat.icon}{seat.label}</button>;
             }
             return <button key={seat.id} className={'cj-seat' + (s.view === seat.id ? ' on' : '')} onClick={() => s.setView(s.view === seat.id ? 'today' : seat.id)}>{seat.icon}{seat.label}</button>;
           })}

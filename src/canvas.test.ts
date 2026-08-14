@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DayPlan, Proposal, TimeBlock } from '@daycore/core';
 import {
-  addDaysIso, boxOf, canvasHeight, COMPACT_UNDER, DAY0, DEFAULT_DUR, isoOf, laneize,
+  addDaysIso, boxOf, canvasHeight, COMPACT_UNDER, DAY0, DEFAULT_DUR, laneize,
   MIN_HEIGHT, PETRIFY_HORIZON_MIN, phaseOf, piecesFor, snap5, toMin, wellAt, yOf,
 } from './canvas';
 
@@ -192,9 +192,8 @@ describe('wellAt', () => {
   });
 });
 
-describe('isoOf / addDaysIso', () => {
-  it('formats an ISO date and adds days across month boundaries', () => {
-    expect(isoOf(new Date(2026, 7, 13, 12, 0))).toBe('2026-08-13');
+describe('addDaysIso', () => {
+  it('adds days across month boundaries', () => {
     expect(addDaysIso('2026-08-31', 1)).toBe('2026-09-01');
     expect(addDaysIso('2026-08-13', -1)).toBe('2026-08-12');
   });
@@ -209,28 +208,27 @@ describe('snap5', () => {
 });
 
 describe('phaseOf', () => {
-  const now = new Date(2026, 7, 13, 14, 30); // 14:30 on 2026-08-13
+  const today = '2026-08-13';
+  const nowMin = 14 * 60 + 30; // 14:30 on 2026-08-13
 
   it('classifies a future block', () => {
-    expect(phaseOf(b({ id: 'f', time: '16:00', duration_min: 60 }), '2026-08-13', now)).toBe('future');
+    expect(phaseOf(b({ id: 'f', time: '16:00', duration_min: 60 }), '2026-08-13', today, nowMin)).toBe('future');
   });
   it('classifies a running block', () => {
-    expect(phaseOf(b({ id: 'n', time: '14:00', duration_min: 60 }), '2026-08-13', now)).toBe('now');
+    expect(phaseOf(b({ id: 'n', time: '14:00', duration_min: 60 }), '2026-08-13', today, nowMin)).toBe('now');
   });
   it('classifies a finished block as recon', () => {
-    expect(phaseOf(b({ id: 'r', time: '12:00', duration_min: 60 }), '2026-08-13', now)).toBe('recon');
+    expect(phaseOf(b({ id: 'r', time: '12:00', duration_min: 60 }), '2026-08-13', today, nowMin)).toBe('recon');
   });
   it('treats a past day as stone', () => {
-    expect(phaseOf(b({ id: 's', time: '10:00', duration_min: 60 }), '2026-08-12', now)).toBe('stone');
+    expect(phaseOf(b({ id: 's', time: '10:00', duration_min: 60 }), '2026-08-12', today, nowMin)).toBe('stone');
   });
   it('keeps last night editable before the 5h horizon', () => {
-    const early = new Date(2026, 7, 13, 3, 0); // 03:00
-    expect(phaseOf(b({ id: 'y', time: '22:00', duration_min: 60 }), '2026-08-12', early)).toBe('recon');
-    const late = new Date(2026, 7, 13, 6, 0); // 06:00, horizon passed
-    expect(phaseOf(b({ id: 'y', time: '22:00', duration_min: 60 }), '2026-08-12', late)).toBe('stone');
+    expect(phaseOf(b({ id: 'y', time: '22:00', duration_min: 60 }), '2026-08-12', today, 180)).toBe('recon'); // 03:00
+    expect(phaseOf(b({ id: 'y', time: '22:00', duration_min: 60 }), '2026-08-12', today, 360)).toBe('stone'); // 06:00, horizon passed
   });
   it('treats an untimed block as future (never freezes)', () => {
-    expect(phaseOf(b({ id: 'u', time: null }), '2026-08-13', now)).toBe('future');
+    expect(phaseOf(b({ id: 'u', time: null }), '2026-08-13', today, nowMin)).toBe('future');
   });
   it('exposes the 5-hour horizon constant', () => {
     expect(PETRIFY_HORIZON_MIN).toBe(300);
