@@ -254,5 +254,8 @@
   "outlook.tomorrow": "明天一瞥",
   "outlook.tomorrowEmpty": "明天还是空的，今晚我会悄悄排好一版。",
   "companion.note": "这里留着聊天记录，直接在下面说",
-  "materials.uploadedBody": "上传的文件 · {kb} KB"
+  "materials.uploadedBody": "上传的文件 · {kb} KB",
+  "trace.rhythm.learned": "约 {sleep} 睡 · {wake} 起",
+  "trace.rhythm.learnedSub": "学来的，不是设置的——我在你睡后悄悄排好明天",
+  "trace.rhythm.pinnedSub": "已钉住——按你说的来"
 }

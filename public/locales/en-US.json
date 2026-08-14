@@ -254,5 +254,8 @@
   "outlook.tomorrow": "Tomorrow at a glance",
   "outlook.tomorrowEmpty": "Tomorrow is still empty — I'll quietly lay out a draft tonight.",
   "companion.note": "Chat history stays here — just type below",
-  "materials.uploadedBody": "Uploaded file · {kb} KB"
+  "materials.uploadedBody": "Uploaded file · {kb} KB",
+  "trace.rhythm.learned": "Sleeps ~{sleep} · wakes ~{wake}",
+  "trace.rhythm.learnedSub": "Learned, not set — I quietly lay out tomorrow while you sleep",
+  "trace.rhythm.pinnedSub": "Pinned — I follow what you said"
 }

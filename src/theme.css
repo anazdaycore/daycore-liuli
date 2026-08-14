@@ -525,3 +525,12 @@ input,textarea,select{font:inherit;color:inherit}
 .cj-ritem .c{font-size:11px;color:var(--ink3)}
 .cj-ritem .dl{font-size:11.5px;font-weight:650;color:var(--ink2);font-variant-numeric:tabular-nums;flex:none}
 .cj-ritem[data-u="2"] .dl{color:var(--warm)}
+/* ── 足迹河（对照 changjuan.css 253-260 整段） ── */
+.cj-river{display:flex;gap:4px;align-items:flex-end;padding:6px 2px 2px;overflow:hidden}
+.cj-rday{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:default}
+.cj-rday .bar{width:100%;border-radius:8px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 55%,transparent),color-mix(in srgb,var(--accent) 18%,transparent));transition:height .3s var(--ease)}
+.cj-rday[data-tone="1"] .bar{background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 60%,transparent),color-mix(in srgb,var(--ok) 20%,transparent))}
+.cj-rday[data-tone="3"] .bar{background:linear-gradient(180deg,color-mix(in srgb,var(--warm) 55%,transparent),color-mix(in srgb,var(--warm) 18%,transparent))}
+.cj-rday .e{font-size:12px;height:17px;white-space:nowrap}
+.cj-rday .d{font-size:9.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.cj-rday.today .d{color:var(--accent);font-weight:700}

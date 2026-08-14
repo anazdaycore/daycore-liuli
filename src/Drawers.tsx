@@ -131,10 +131,13 @@ export function TracePage({ s }: { s: S }) {
               );
             })}
           </div>
-          {/* ⚠️ 作息节律：core 无 rhythm() 端点（原型 mock），先静态文案卡，钉住钮不做 */}
+          {/* ⚠️ 钉住钮：服务端无 pin 端点，不做（core 只有 GET /api/rhythm 只读） */}
           <div className="cj-item" style={{ marginTop: 14 }}>
             <span style={{ color: 'var(--accent)', marginTop: 2 }}><Moon size={15} /></span>
-            <div className="bd"><div className="t">{t('trace.rhythm.title')}</div><div className="s">{t('trace.rhythm.body')}</div></div>
+            <div className="bd">
+              <div className="t">{s.rhythm && s.rhythm.source !== 'default' ? t('trace.rhythm.learned', { sleep: s.rhythm.sleep, wake: s.rhythm.wake }) : t('trace.rhythm.title')}</div>
+              <div className="s">{s.rhythm && s.rhythm.source !== 'default' ? (s.rhythm.source === 'pinned' ? t('trace.rhythm.pinnedSub') : t('trace.rhythm.learnedSub')) : t('trace.rhythm.body')}</div>
+            </div>
           </div>
           {/* ⚠️ 周信：无端点，静态文案卡 */}
           <div className="cj-item" style={{ marginTop: 14 }}>

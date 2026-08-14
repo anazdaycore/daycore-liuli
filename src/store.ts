@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { ApiError, todayIso } from '@daycore/core';
-import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
+import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, Rhythm, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
 import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
@@ -95,6 +95,7 @@ export function useStore(boot: Boot) {
   const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
   const [riverMoods, setRiverMoods] = useState<MoodCheckin[]>([]);
   const [tomorrowPlan, setTomorrowPlan] = useState<DayPlan | null>(null);
+  const [rhythm, setRhythm] = useState<Rhythm | null>(null);
   const [ops, setOps] = useState<OperationLog[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -112,7 +113,7 @@ export function useStore(boot: Boot) {
 
   const refresh = useCallback(async () => {
     try {
-      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, tp, op, as, co] = await Promise.all([
+      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, tp, op, as, co, rh] = await Promise.all([
         api.planForDate(date),
         api.proposals(),
         api.themes(),
@@ -128,6 +129,7 @@ export function useStore(boot: Boot) {
         api.ops(50),
         api.assignments(),
         api.courses(),
+        api.rhythm(),
       ]);
       setPlan(pl);
       setProposals(ps.proposals ?? []);
@@ -147,6 +149,7 @@ export function useStore(boot: Boot) {
       setOps(op.ops ?? []);
       setAssignments(as.assignments ?? []);
       setCourses(co.courses ?? []);
+      setRhythm(rh ?? null);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -535,7 +538,7 @@ export function useStore(boot: Boot) {
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
     prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
-    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial,
+    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus, riverMoods, tomorrowPlan, addMaterial, deleteMaterial, rhythm,
   };
 }
 
