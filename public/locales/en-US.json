@@ -235,5 +235,6 @@
   "outlook.done": "done",
   "outlook.drop": "let go",
   "outlook.wishPlaceholder": "Something you want: learn / go / buy…",
-  "outlook.wishAdded": "Added to wishes"
+  "outlook.wishAdded": "Added to wishes",
+  "top.weekHint": "at most a week"
 }

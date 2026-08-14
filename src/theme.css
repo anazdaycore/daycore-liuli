@@ -370,6 +370,12 @@ input,textarea,select{font:inherit;color:inherit}
   .cj-inputbar .mic{width:40px;height:40px}
   .cj-page{padding:60px 12px 200px}
   .cj-toasts{bottom:170px;left:10px}
+  .cj-title.wk .w{display:none}
+  .cj-nav .cj-pill{font-size:0;gap:0;padding:0 9px}
+  .cj-nav .cj-pill svg{width:17px;height:17px}
+  .cj-top>.cj-pill{order:2;height:36px;padding:0 11px}
+  .cj-top>.cj-pill.on{font-size:0;gap:0;padding:0 10px}
+  .cj-top>.cj-pill.on svg{width:17px;height:17px}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}

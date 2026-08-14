@@ -73,9 +73,9 @@ export function App({ boot }: { boot: Boot }) {
         {s.view === 'today' && (
           <div className="cj-nav">
             <button className="cj-navbtn" onClick={() => s.setDate(addDaysIso(s.date, s.mode === 'week' ? -7 : -1))}><ChevronLeft size={17} /></button>
-            <div className="cj-title">
+            <div className={'cj-title' + (s.mode === 'week' ? ' wk' : '')}>
               <span className="d">{s.mode === 'week' ? t('top.week') : (s.isToday ? t('top.today') : dateLabel)}</span>
-              <span className="w">{dateLabel}{nb ? ' · ' + nb + ' ' + t('top.count') : ''}</span>
+              <span className="w">{s.mode === 'week' ? t('top.weekHint') : dateLabel + (nb ? ' · ' + nb + ' ' + t('top.count') : '')}</span>
             </div>
             <button className="cj-navbtn" onClick={() => s.setDate(addDaysIso(s.date, s.mode === 'week' ? 7 : 1))}><ChevronRight size={17} /></button>
             {offToday && <button className="cj-pill glass on" onClick={() => s.setDate(isoOf(new Date()))}><Sun size={14} />{t('top.backToday')}</button>}

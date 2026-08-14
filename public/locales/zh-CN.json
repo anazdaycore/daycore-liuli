@@ -235,5 +235,6 @@
   "outlook.done": "达成了",
   "outlook.drop": "放下",
   "outlook.wishPlaceholder": "想做点什么：想学 / 想去 / 想买…",
-  "outlook.wishAdded": "记进想做清单了"
+  "outlook.wishAdded": "记进想做清单了",
+  "top.weekHint": "最多看到一周"
 }
