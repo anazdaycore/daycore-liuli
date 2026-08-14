@@ -100,8 +100,9 @@ export function OutlookPanel({ s }: { s: S }) {
         {active.map((w) => (
           <div key={w.id} className="cj-item">
             <div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{t('outlook.effort', { n: w.effortMin })}</div> : null}</div>
-            <button className="x" title={t('outlook.done')} onClick={() => void s.setWishStatus(w.id, 'done')} style={{ color: 'var(--ok)' }}><Check size={14} /></button>
-            <button className="x" title={t('outlook.drop')} onClick={() => void s.setWishStatus(w.id, 'archived')}><X size={13} /></button>
+            {/* ⚠️ 达成/放下是主操作，常驻可见（.cj-item .x 默认 hover 才显，移动端无 hover） */}
+            <button className="x" title={t('outlook.done')} onClick={() => void s.setWishStatus(w.id, 'done')} style={{ color: 'var(--ok)', opacity: 1 }}><Check size={14} /></button>
+            <button className="x" title={t('outlook.drop')} onClick={() => void s.setWishStatus(w.id, 'archived')} style={{ opacity: 1 }}><X size={13} /></button>
           </div>
         ))}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
