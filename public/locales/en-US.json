@@ -215,5 +215,8 @@
   "settings.theme.rename": "Rename",
   "settings.theme.renameTitle": "Rename theme",
   "settings.theme.renameSave": "Save",
-  "settings.theme.renamed": "Renamed"
+  "settings.theme.renamed": "Renamed",
+  "settings.theme.aiEdit": "AI remix",
+  "settings.theme.editing": "Editing: {name}",
+  "settings.theme.edited": "Updated and applied"
 }

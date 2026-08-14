@@ -215,5 +215,8 @@
   "settings.theme.rename": "重命名",
   "settings.theme.renameTitle": "重命名主题",
   "settings.theme.renameSave": "保存",
-  "settings.theme.renamed": "改好了"
+  "settings.theme.renamed": "改好了",
+  "settings.theme.aiEdit": "AI 改一版",
+  "settings.theme.editing": "正在改：{name}",
+  "settings.theme.edited": "改好了，已应用"
 }

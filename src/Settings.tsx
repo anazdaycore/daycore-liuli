@@ -41,10 +41,11 @@ function ThemeStudio({ s }: { s: S }) {
   const [aiDesc, setAiDesc] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [preview, setPreview] = useState<{ name: string; dark: boolean; variables: Record<string, string> } | null>(null);
+  const [preview, setPreview] = useState<{ name: string; dark: boolean; variables: Record<string, string>; editingId?: string } | null>(null);
   const [menu, setMenu] = useState<{ th: CustomTheme; confirm: boolean } | null>(null);
   const [aiBase, setAiBase] = useState('');
   const [rename, setRename] = useState<{ th: CustomTheme; val: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const longPress = useRef<number | null>(null);
 
   const applyCandidate = (cand: { dark: boolean; variables: Record<string, string> }) => {
@@ -60,12 +61,12 @@ function ThemeStudio({ s }: { s: S }) {
     setBusy(true);
     setErr('');
     try {
-      const res = await api.generateTheme(desc);
+      const res = editing ? await api.generateTheme({ description: desc, themeId: editing.id }) : await api.generateTheme(desc);
       if (res.error) { setErr(t('settings.theme.aiError')); return; }
       const variables = res.variables || {};
-      const name = (res.name as string) || t('theme.sky');
+      const name = (res.name as string) || editing?.name || t('theme.sky');
       const dark = !!(res as { dark?: boolean }).dark;
-      setPreview({ name, dark, variables });
+      setPreview({ name, dark, variables, editingId: editing ? editing.id : undefined });
       applyCandidate({ dark, variables });
     } catch {
       setErr(t('settings.theme.aiError'));
@@ -77,6 +78,15 @@ function ThemeStudio({ s }: { s: S }) {
   const cancelPreview = () => { setPreview(null); void s.setTheme(s.currentTheme); };
   const savePreview = async () => {
     if (!preview) return;
+    if (preview.editingId) {
+      await api.patchTheme(preview.editingId, { variables: preview.variables });
+      setPreview(null);
+      setAiDesc('');
+      setEditing(null);
+      await s.refresh();
+      s.push({ label: t('settings.theme.edited') });
+      return;
+    }
     const th = await api.saveTheme({ name: preview.name, dark: preview.dark, base: aiBase || undefined, variables: preview.variables });
     setPreview(null);
     setAiDesc('');
@@ -114,7 +124,7 @@ function ThemeStudio({ s }: { s: S }) {
       </div>
       {s.themes.length > 0 && <div style={{ fontSize: 11.5, color: 'var(--ink3)', margin: '8px 2px 0' }}>{t('settings.theme.customHint')}</div>}
       <div className="cj-set-card glass" style={{ marginTop: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 13.5, fontWeight: 650 }}><Wand size={16} style={{ color: 'var(--accent)' }} />{t('settings.theme.aiTitle')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 13.5, fontWeight: 650 }}><Wand size={16} style={{ color: 'var(--accent)' }} />{t('settings.theme.aiTitle')}{editing && <span className="cj-chip on" style={{ marginLeft: 4 }} onClick={() => setEditing(null)}>{t('settings.theme.editing', { name: editing.name })} ×</span>}</div>
         <input className="cj-ai-input" placeholder={t('settings.theme.aiPlaceholder')} value={aiDesc}
           onChange={(e) => setAiDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !busy) void generate(); }} />
         <div className="cj-ai-chips">
@@ -142,6 +152,7 @@ function ThemeStudio({ s }: { s: S }) {
           <div className="cj-veil" style={{ background: 'transparent', backdropFilter: 'none' }} onClick={() => setMenu(null)}></div>
           <div className="cj-ctx glass" style={{ left: '50%', top: '40%', transform: 'translate(-50%,-50%)' }} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => { setRename({ th: menu.th, val: menu.th.name }); setMenu(null); }}><Pencil size={14} />{t('settings.theme.rename')}</button>
+            <button onClick={() => { setEditing({ id: menu.th.id, name: menu.th.name }); setAiBase(''); setAiDesc(''); setMenu(null); }}><Wand size={14} />{t('settings.theme.aiEdit')}</button>
             <button style={{ color: '#dc2626' }} onClick={() => {
               if (!menu.confirm) { setMenu({ ...menu, confirm: true }); return; }
               const nm = menu.th.name;
