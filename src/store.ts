@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { ApiError, todayIso } from '@daycore/core';
-import type { Boot, ChannelBinding, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, Proposal, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
+import type { Assignment, Boot, ChannelBinding, Course, CustomTheme, DayPlan, MaterialCategory, MemoryFact, MoodCheckin, MoodKind, OperationLog, Proposal, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
 import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
@@ -88,6 +88,9 @@ export function useStore(boot: Boot) {
   const personaPrompt = boot.session.personaPrompt ?? '';
   const [moodKinds, setMoodKinds] = useState<MoodKind[]>([]);
   const [moodToday, setMoodToday] = useState<MoodCheckin | null>(null);
+  const [ops, setOps] = useState<OperationLog[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     const h = setInterval(() => setTick(nowMin()), 30_000);
@@ -102,7 +105,7 @@ export function useStore(boot: Boot) {
 
   const refresh = useCallback(async () => {
     try {
-      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh] = await Promise.all([
+      const [pl, ps, th, ws, ms, pr, ch, ca, me, mk, mh, op, as, co] = await Promise.all([
         api.planForDate(date),
         api.proposals(),
         api.themes(),
@@ -114,6 +117,9 @@ export function useStore(boot: Boot) {
         api.memory(),
         api.moodKinds(),
         api.moodHistory(3),
+        api.ops(50),
+        api.assignments(),
+        api.courses(),
       ]);
       setPlan(pl);
       setProposals(ps.proposals ?? []);
@@ -128,6 +134,9 @@ export function useStore(boot: Boot) {
       setMoodKinds(mk.kinds ?? []);
       const todayIsoStr = todayIso();
       setMoodToday((mh ?? []).find((m) => (m.createdAt || '').slice(0, 10) === todayIsoStr) || null);
+      setOps(op.ops ?? []);
+      setAssignments(as.assignments ?? []);
+      setCourses(co.courses ?? []);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -324,6 +333,16 @@ export function useStore(boot: Boot) {
     await refresh();
   }, [refresh]);
 
+  const addWish = useCallback(async (title: string) => {
+    await api.createWish({ title });
+    await refresh();
+  }, [refresh]);
+
+  const setWishStatus = useCallback(async (id: string, status: 'active' | 'done' | 'archived') => {
+    await api.updateWish(id, { status });
+    await refresh();
+  }, [refresh]);
+
   // ── theme ──
   const setTheme = useCallback(async (id: string) => {
     setCurrentTheme(id);
@@ -496,7 +515,7 @@ export function useStore(boot: Boot) {
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
     prefs, channels, bindings, categories, memories, assistantName, personaPrompt,
     setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
-    moodKinds, moodToday, recordMood,
+    moodKinds, moodToday, recordMood, ops, assignments, courses, addWish, setWishStatus,
   };
 }
 

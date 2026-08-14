@@ -3,6 +3,7 @@ import type { Boot } from '@daycore/core';
 import { addDaysIso, isoOf, toHM, toMin } from './canvas';
 import { Companion } from './Companion';
 import { DayCanvas } from './DayCanvas';
+import { OutlookPanel, TracePanel } from './Drawers';
 import { SettingsPage } from './Settings';
 import { WeekLens } from './WeekLens';
 import {
@@ -118,8 +119,8 @@ export function App({ boot }: { boot: Boot }) {
 
       {s.view === 'today' && (s.mode === 'day' ? <DayCanvas s={s} /> : <WeekLens s={s} />)}
       {s.view === 'materials' && <Drawer title={t('drawer.materials')} side="left" onClose={() => s.setView('today')}>{s.materials.map((m) => <div key={m.id} className="cj-item"><div className="bd"><div className="t">{m.title}</div>{m.summary ? <div className="s">{m.summary}</div> : null}</div></div>)}</Drawer>}
-      {s.view === 'outlook' && <Drawer title={t('drawer.outlook')} side="right" onClose={() => s.setView('today')}>{s.wishes.map((w) => <div key={w.id} className="cj-item"><div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{w.effortMin} min</div> : null}</div></div>)}</Drawer>}
-      {s.view === 'trace' && <Drawer title={t('drawer.trace')} side="top" onClose={() => s.setView('today')}><div className="cj-sec">{t('trace.summary', { done: s.doneCount, total: s.total })}</div></Drawer>}
+      {s.view === 'outlook' && <Drawer title={t('drawer.outlook')} side="right" onClose={() => s.setView('today')}><OutlookPanel s={s} /></Drawer>}
+      {s.view === 'trace' && <Drawer title={t('drawer.trace')} side="top" onClose={() => s.setView('today')}><TracePanel s={s} /></Drawer>}
       {s.view === 'companion' && <Companion s={s} onClose={() => s.setView('today')} />}
       {s.view === 'settings' && <SettingsPage s={s} />}
 
