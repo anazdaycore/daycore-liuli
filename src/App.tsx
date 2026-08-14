@@ -3,6 +3,7 @@ import type { Boot } from '@daycore/core';
 import { addDaysIso, isoOf, toHM, toMin } from './canvas';
 import { Companion } from './Companion';
 import { DayCanvas } from './DayCanvas';
+import { SettingsPage } from './Settings';
 import { WeekLens } from './WeekLens';
 import {
   Anchor, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Layers, MessageHeart,
@@ -119,7 +120,7 @@ export function App({ boot }: { boot: Boot }) {
       {s.view === 'outlook' && <Drawer title={t('drawer.outlook')} side="right" onClose={() => s.setView('today')}>{s.wishes.map((w) => <div key={w.id} className="cj-item"><div className="bd"><div className="t">{w.title}</div>{w.effortMin ? <div className="s">{w.effortMin} min</div> : null}</div></div>)}</Drawer>}
       {s.view === 'trace' && <Drawer title={t('drawer.trace')} side="top" onClose={() => s.setView('today')}><div className="cj-sec">{t('trace.summary', { done: s.doneCount, total: s.total })}</div></Drawer>}
       {s.view === 'companion' && <Companion s={s} onClose={() => s.setView('today')} />}
-      {s.view === 'settings' && <Drawer title={t('menu.settings')} side="top" onClose={() => s.setView('today')}><ThemeGrid s={s} /></Drawer>}
+      {s.view === 'settings' && <SettingsPage s={s} />}
 
       {s.view === 'today' && s.stack.length > 0 && (
         <div className="cj-stack">
@@ -201,12 +202,18 @@ export function App({ boot }: { boot: Boot }) {
           <button className="send" disabled={!text.trim() || s.busy} onClick={submit}><ArrowUp size={16} /></button>
         </div>
         <nav className="cj-dock glass">
+          <div className="cj-rail-logo"><span className="dot"></span>{t('menu.brand')}</div>
           {seats.map((seat) => {
             if (seat.id === 'today') {
               return <button key={seat.id} className={'cj-seat home' + (s.view === 'today' && !offToday ? '' : ' off')} onClick={() => { s.setView('today'); s.setDate(isoOf(new Date())); s.setMode('day'); }}>{seat.icon}{seat.label}</button>;
             }
             return <button key={seat.id} className={'cj-seat' + (s.view === seat.id ? ' on' : '')} onClick={() => s.setView(s.view === seat.id ? 'today' : seat.id)}>{seat.icon}{seat.label}</button>;
           })}
+          <button className="cj-rail-user" onClick={() => setMenu(!menu)}>
+            <span className="cj-avatar" style={{ width: 32, height: 32, fontSize: 12, flex: 'none' }}>{initial}</span>
+            <span className="meta"><span className="name">{boot.session.assistantName}</span><span className="sub">{t('menu.settings')}</span></span>
+            <Settings size={15} style={{ color: 'var(--ink3)', flex: 'none' }} />
+          </button>
         </nav>
       </footer>
       )}
@@ -226,32 +233,4 @@ function Drawer({ title, side, onClose, children }: { title: string; side: 'left
   );
 }
 
-function ThemeGrid({ s }: { s: ReturnType<typeof useStore> }) {
-  const t = s.t;
-  const tn = themeNames(t);
-  return (
-    <div className="cj-theme-grid">
-      {BUILTIN_IDS.map((id) => {
-        const m = BUILTIN_META[id];
-        return (
-          <button key={id} className={'cj-theme-card' + (s.currentTheme === id ? ' sel' : '')} onClick={() => void s.setTheme(id)}>
-            <span className="cj-theme-sw" style={{ background: 'linear-gradient(135deg,' + m.sw[1] + ',' + m.sw[2] + ')' }}><span className="pill" style={{ background: m.sw[0] }}></span></span>
-            <span className="cj-theme-name">{tn[id]}{m.dark && <span className="dk">{t('theme.dark')}</span>}</span>
-            {s.currentTheme === id && <span className="cj-theme-check"><Check size={12} strokeWidth={3} /></span>}
-          </button>
-        );
-      })}
-      {s.themes.map((th) => {
-        const v = th.variables || {};
-        return (
-          <button key={th.id} className={'cj-theme-card' + (s.currentTheme === th.id ? ' sel' : '')} onClick={() => void s.setTheme(th.id)}>
-            <span className="cj-theme-sw" style={{ background: 'linear-gradient(135deg,' + (v['--bg'] || '#eee') + ',' + (v['--bg2'] || '#ddd') + ')' }}><span className="pill" style={{ background: v['--accent'] || '#888' }}></span></span>
-            <span className="cj-theme-name">{th.name}{th.dark && <span className="dk">{t('theme.dark')}</span>}</span>
-            {s.currentTheme === th.id && <span className="cj-theme-check"><Check size={12} strokeWidth={3} /></span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 

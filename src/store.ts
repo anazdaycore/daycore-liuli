@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import { ApiError, todayIso } from '@daycore/core';
-import type { Boot, CustomTheme, DayPlan, Proposal, TimeBlock, Wish } from '@daycore/core';
+import type { Boot, ChannelBinding, CustomTheme, DayPlan, MaterialCategory, MemoryFact, Proposal, SessionPrefs, TimeBlock, Wish } from '@daycore/core';
 import { addDaysIso, nowMin, piecesFor, toHM, type Piece } from './canvas';
 import { applyTheme } from './theme';
 
@@ -79,6 +79,12 @@ export function useStore(boot: Boot) {
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [chatBusy, setChatBusy] = useState(false);
   const companionLoaded = useRef(false);
+  const [prefs, setPrefs] = useState<SessionPrefs | null>(null);
+  const [channels, setChannels] = useState<{ name: string; label: string; available: boolean }[]>([]);
+  const [bindings, setBindings] = useState<ChannelBinding[]>([]);
+  const [categories, setCategories] = useState<MaterialCategory[]>([]);
+  const [memories, setMemories] = useState<MemoryFact[]>([]);
+  const [assistantName, setAssistantName] = useState(() => boot.session.assistantName);
 
   useEffect(() => {
     const h = setInterval(() => setTick(nowMin()), 30_000);
@@ -93,18 +99,27 @@ export function useStore(boot: Boot) {
 
   const refresh = useCallback(async () => {
     try {
-      const [pl, ps, th, ws, ms] = await Promise.all([
+      const [pl, ps, th, ws, ms, pr, ch, ca, me] = await Promise.all([
         api.planForDate(date),
         api.proposals(),
         api.themes(),
         api.wishes(),
         api.materials(),
+        api.preferences(),
+        api.channels(),
+        api.materialCategories(),
+        api.memory(),
       ]);
       setPlan(pl);
       setProposals(ps.proposals ?? []);
       setThemes(th.themes ?? []);
       setWishes(ws.wishes ?? []);
       setMaterials(ms.materials ?? []);
+      setPrefs(pr);
+      setChannels(ch.channels ?? []);
+      setBindings(ch.bindings ?? []);
+      setCategories(ca.categories ?? []);
+      setMemories(me.facts ?? []);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -242,6 +257,59 @@ export function useStore(boot: Boot) {
     ));
     try { await api.respondToDecision(did, choice, text); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }, []);
+
+  // ── settings ──
+  const setPref = useCallback((key: keyof SessionPrefs, value: boolean) => {
+    setPrefs((p) => (p ? { ...p, [key]: value } : p));
+    void api.patchPreferences({ [key]: value } as Partial<SessionPrefs>).then(setPrefs).catch(() => {});
+  }, []);
+
+  const saveAssistantName = useCallback((name: string) => {
+    setAssistantName(name);
+    void api.patchSettings({ assistantName: name }).catch(() => {});
+  }, []);
+
+  const savePersonaPrompt = useCallback((prompt: string) => {
+    void api.patchSettings({ personaPrompt: prompt }).catch(() => {});
+  }, []);
+
+  const saveLanguage = useCallback((lang: string) => {
+    void api.patchSettings({ language: lang }).catch(() => {});
+  }, []);
+
+  const bindChannel = useCallback(async (channel: string) => {
+    const r = await api.bindChannel(channel);
+    await refresh();
+    return r;
+  }, [refresh]);
+
+  const unbindChannel = useCallback(async (channel: string) => {
+    await api.unbindChannel(channel);
+    await refresh();
+  }, [refresh]);
+
+  const toggleCategory = useCallback((id: string, on: boolean) => {
+    const next: Record<string, boolean> = {};
+    for (const c of categories) next[c.id] = c.enabled;
+    next[id] = on;
+    setCategories((cs) => cs.map((c) => (c.id === id ? { ...c, enabled: on } : c)));
+    void api.patchPreferences({ materialCategories: next }).then(() => refresh()).catch(() => refresh());
+  }, [categories, refresh]);
+
+  const addMemory = useCallback(async (text: string) => {
+    await api.addMemory(text);
+    await refresh();
+  }, [refresh]);
+
+  const deleteMemory = useCallback(async (id: string) => {
+    await api.deleteMemory(id);
+    await refresh();
+  }, [refresh]);
+
+  const clearMemory = useCallback(async () => {
+    await api.clearMemory();
+    await refresh();
+  }, [refresh]);
 
   // ── theme ──
   const setTheme = useCallback(async (id: string) => {
@@ -404,7 +472,7 @@ export function useStore(boot: Boot) {
   const isToday = date === todayIso();
 
   return {
-    t, push, date, setDate, mode, setMode, view, setView, isToday,
+    t, push, locale: boot.catalog.locale, date, setDate, mode, setMode, view, setView, isToday,
     weekStart, week, plan, pieces, proposals, stack,
     themes, currentTheme, setTheme, wishes, materials,
     toasts, dismiss, busy, error, draft, setDraft, confirmDraft, submit,
@@ -413,6 +481,8 @@ export function useStore(boot: Boot) {
     toggleDone, setCompleted, moveTime, moveToTomorrow, toWish, refish, markConflict, removeBlock, setNote, lockBlock, dropInWell,
     answer, takeRow, takeBack, refresh,
     threadId, chat, chatBusy, openCompanion, sendCompanion, respondDecision,
+    prefs, channels, bindings, categories, memories, assistantName,
+    setPref, saveAssistantName, savePersonaPrompt, saveLanguage, bindChannel, unbindChannel, toggleCategory, addMemory, deleteMemory, clearMemory,
   };
 }
 

@@ -406,3 +406,66 @@ input,textarea,select{font:inherit;color:inherit}
 .cj-chatbar input::placeholder{color:var(--ink3)}
 .cj-chatbar .send{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;flex:none}
 .cj-chatbar .send:disabled{opacity:.35;cursor:default}
+/* ── 设置页零件（对照 changjuan.css 补齐） ── */
+.cj-set-card{border-radius:var(--r-md);padding:14px 16px;margin-bottom:8px}
+.cj-err{font-size:12px;color:#dc2626;margin-top:8px}
+[data-theme="night"] .cj-err{color:#f87171}
+.cj-set-row input.inline{width:130px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--glass2);padding:0 11px;font-size:13px;text-align:right}
+.cj-set-row input.inline:focus{outline:none;border-color:var(--accent)}
+.cj-switch{position:relative;width:44px;height:26px;border-radius:999px;background:color-mix(in srgb,var(--ink3) 28%,transparent);flex:none;transition:background .2s;cursor:pointer}
+.cj-switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .22s var(--spring)}
+.cj-switch.on{background:var(--accent)}
+.cj-switch.on::after{transform:translateX(18px)}
+.cj-ta{width:100%;min-height:88px;border-radius:12px;border:1px solid var(--line);background:var(--glass2);padding:10px 12px;font-size:13px;line-height:1.6;resize:vertical;color:var(--ink)}
+.cj-ta:focus{outline:none;border-color:var(--accent)}
+.cj-ai-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.cj-chip{height:26px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--glass2);border:1px solid var(--line);color:var(--ink2);transition:all .15s}
+.cj-chip:hover{color:var(--accent)}
+.cj-chip.on{background:var(--accent);border-color:transparent;color:#fff}
+.cj-theme-card .dots{position:absolute;left:6px;top:6px;width:22px;height:22px;border-radius:8px;background:rgba(0,0,0,.22);color:#fff;display:none;align-items:center;justify-content:center}
+.cj-theme-card:hover .dots{display:flex}
+.cj-previewbar{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:75;display:flex;align-items:center;gap:10px;border-radius:999px;padding:9px 12px 9px 18px;font-size:12.5px;font-weight:650;animation:cj-in .3s var(--spring);max-width:min(560px,94vw)}
+.cj-previewbar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cj-previewbar button{flex:none;height:30px;padding:0 13px;border-radius:999px;font-size:12px;font-weight:700;background:var(--glass2);border:1px solid var(--line);color:var(--ink2);transition:all .15s}
+.cj-previewbar button:hover{color:var(--ink)}
+.cj-previewbar button.pri{background:var(--accent);border-color:transparent;color:#fff}
+.cj-ctx{position:fixed;z-index:90;width:170px;border-radius:14px;padding:6px;animation:cj-in .18s var(--spring)}
+.cj-ctx button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border-radius:9px;font-size:12.5px;font-weight:600;text-align:left;transition:background .12s}
+.cj-ctx button:hover{background:var(--accent-soft)}
+.cj-token{display:flex;align-items:center;gap:10px;border:1.5px dashed var(--line);border-radius:12px;padding:11px 14px;font-family:ui-monospace,monospace;font-size:14px;font-weight:700;letter-spacing:.08em;margin:10px 0;color:var(--ink)}
+.cj-about{text-align:center;padding:20px 0 6px;color:var(--ink3);font-size:11.5px;line-height:1.8}
+.cj-about b{color:var(--ink2);font-size:13px}
+.cj-seg{display:flex;background:var(--glass2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
+.cj-seg button{flex:1;height:29px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ink3);transition:all .15s}
+.cj-seg button.on{background:var(--accent);color:#fff}
+.cj-item .x{color:var(--ink3);width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:0;transition:all .15s}
+.cj-item:hover .x{opacity:1}
+.cj-item .x:hover{color:var(--ink);background:var(--accent-soft)}
+.cj-kind{flex:none;font-size:10px;font-weight:700;letter-spacing:.05em;border-radius:6px;padding:2px 6px;margin-top:2px;background:var(--accent-soft);color:var(--accent)}
+.cj-kind.life{background:color-mix(in srgb,var(--ok) 13%,transparent);color:var(--ok)}
+.cj-kind.mem{background:color-mix(in srgb,var(--c-appointment) 13%,transparent);color:var(--c-appointment)}
+/* ── 桌面左栏（对照 changjuan.css @media 1100px） ── */
+.cj-rail-logo,.cj-rail-user{display:none}
+@media (min-width:1100px){
+.cj-dock{position:fixed;left:0;top:0;bottom:0;width:228px;z-index:46;flex-direction:column;align-items:stretch;gap:4px;padding:22px 14px calc(16px + env(safe-area-inset-bottom));border-radius:0;border:none;border-right:1px solid var(--glass-brd);box-shadow:none}
+.cj-rail-logo{display:flex;align-items:center;gap:10px;padding:2px 12px 22px;font-weight:750;font-size:17px;letter-spacing:-.01em;color:var(--ink)}
+.cj-rail-logo .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.cj-dock .cj-seat,.cj-dock .cj-seat.home{flex-direction:row;justify-content:flex-start;gap:12px;width:100%;margin:0;padding:12px 14px;border-radius:14px;font-size:13.5px;font-weight:600;color:var(--ink2);background:none;border:none;box-shadow:none}
+.cj-dock .cj-seat svg,.cj-dock .cj-seat.home svg{width:20px;height:20px}
+.cj-dock .cj-seat:hover,.cj-dock .cj-seat.home:hover{transform:none;background:color-mix(in srgb,var(--ink) 6%,transparent);color:var(--ink)}
+.cj-dock .cj-seat.on,.cj-dock .cj-seat.home:not(.off){background:var(--accent-soft);color:var(--accent)}
+.cj-dock .cj-seat.home{order:-1}
+.cj-seat .bdg{top:50%;right:12px;transform:translateY(-50%)}
+.cj-rail-user{margin-top:auto;display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:14px;cursor:pointer;text-align:left;transition:background .18s;color:var(--ink2)}
+.cj-rail-user:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.cj-rail-user .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.cj-rail-user .name{font-size:13.5px;font-weight:650;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cj-rail-user .sub{font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cj-stage{left:228px}
+.cj-top{left:228px}
+.cj-top .cj-avatar{display:none}
+.cj-bottom{left:228px}
+.cj-menu{right:auto;left:14px;top:auto;bottom:70px}
+.cj-toasts{left:246px}
+.cj-previewbar{margin-left:114px}
+}
