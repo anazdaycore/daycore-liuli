@@ -1,5 +1,5 @@
 import { SPEAKS } from '@daycore/core';
-import type { Manifest, TokenSpec } from '@daycore/core';
+import type { KindSpec, Manifest, TokenSpec } from '@daycore/core';
 
 // 琉璃 · 长卷 —— 时间是一块连续的空间画布。
 //
@@ -60,7 +60,21 @@ export const TOKENS: TokenSpec[] = [
   // ── the lines only a time map has ──
   { name: '--cj-hour-line', kind: 'color', description: '整点刻度线。⚠️ 要淡到不和块抢' },
   { name: '--cj-now-line', kind: 'color', description: '「现在」那条线' },
+  // ── 虚影（提案在时间轴上的占位影）──
+  { name: '--cj-ghost-inset', kind: 'ratio-or-length', description: '虚影相对块的内缩' },
+  { name: '--cj-ghost-dash', kind: 'list-of<length>', description: '虚影描边虚线的线段节奏' },
 ];
+
+/** 虚影内缩既可以是比例（0.06）也可以是长度（6px）——内置六 kind 没有一个
+ *  能同时收这两种，所以长卷提议一个自己的。pattern 原文即后端测试钉住的那
+ *  份（internal/theme），改它两边一起红。 */
+const RATIO_OR_LENGTH: KindSpec = {
+  name: 'ratio-or-length',
+  pattern: '0|0?\\.[0-9]+|1(\\.0+)?|[0-9.]+(px|rem)',
+  description: '比例或长度：0–1 的小数，或带 px/rem 的长度',
+};
+
+export const PROPOSED_KINDS: KindSpec[] = [RATIO_OR_LENGTH];
 
 export const THEME_RULES = [
   '长卷 是一张地图：整屏是连续的时间，块是贴在上面的东西。所以背景要能承托很多块而不喧宾夺主。',
@@ -77,6 +91,6 @@ export function manifest(buildHash: string): Manifest {
     displayName: DISPLAY_NAME,
     version: __APP_VERSION__,
     minApi: MIN_API,
-    theme: { tokens: TOKENS, rules: THEME_RULES },
+    theme: { tokens: TOKENS, kinds: PROPOSED_KINDS, rules: THEME_RULES },
   };
 }

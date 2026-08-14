@@ -11,6 +11,11 @@
  */
 *{box-sizing:border-box;margin:0}
 html,body{height:100%;overflow:hidden}
+/* 虚影的两个旋钮：声明为默认值的目的是让主题编辑器有处可写。⚠️ 它们目前
+   只有声明、画布尚未 var() 读取（与 3fde031 之前的原始状态一致）——manifest
+   照样把这对 token 报给后端（internal/theme 测试点名要），将来画布读它们时
+   不需要再动契约。 */
+:root{--cj-ghost-dash:4px 3px;--cj-ghost-inset:0.06}
 :root{
 --r-lg:22px;--r-md:16px;--r-sm:11px;
 --ease:cubic-bezier(.22,.9,.24,1);--spring:cubic-bezier(.34,1.5,.5,1);
