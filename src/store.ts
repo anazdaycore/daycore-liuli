@@ -396,7 +396,7 @@ export function useStore(boot: Boot) {
   }, [refresh]);
 
   const setWishStatus = useCallback(async (id: string, status: 'active' | 'done' | 'dropped') => {
-    await api.updateWish(id, { status: status as 'active' | 'done' | 'archived' });
+    await api.updateWish(id, { status });
     await refresh();
   }, [refresh]);
 
