@@ -316,7 +316,13 @@ export function useStore(boot: Boot) {
     void api.patchSettings({ personaPrompt: prompt }).catch(() => {});
   }, []);
 
+  // 切语言两头都要写：chooseLocale 落本地（boot() 下次从它建目录），
+  // patchSettings 落会话（后端渲染好的字符串跟着它 —— GET /api/mood/kinds 的
+  // name 就是）。⚠️ 缺了本地那一半，设置屏弹出的「重载后生效」是假的：重载后
+  // boot() 在 localStorage 里取不到选择，退回浏览器语言，看起来像这个开关自己
+  // 弹了回去 —— 同一类语言不一致的另一半，症状却是反的。
   const saveLanguage = useCallback((lang: string) => {
+    api.chooseLocale(lang);
     void api.patchSettings({ language: lang }).catch(() => {});
   }, []);
 
