@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as api from '@daycore/core';
 import type { CustomTheme } from '@daycore/core';
 import {
@@ -298,6 +298,30 @@ export function SettingsPage({ s }: { s: S }) {
   const [name, setName] = useState(s.assistantName);
   // personaPrompt 后端已 GET 回带，打开时填入现值（core Session 类型未更新，经 store 窄断言读）。
   const [l2, setL2] = useState(s.personaPrompt);
+  // 导入令牌：浏览器插件用它把 Canvas 数据直推过来。挂载时读一次现值；轮换后
+  // 立刻换成新值（旧令牌当场失效）。
+  const [token, setToken] = useState('');
+  const [tokenBusy, setTokenBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    void api.importToken().then(
+      (r) => setToken(r.token ?? ''),
+      () => { /* 读不到就是「还没有令牌」，不是错误页 */ },
+    );
+  }, []);
+  const rotateToken = () => {
+    setTokenBusy(true);
+    void api.rotateImportToken().then(
+      (r) => { setToken(r.token ?? ''); setTokenBusy(false); },
+      () => setTokenBusy(false),
+    );
+  };
+  const copyToken = () => {
+    void navigator.clipboard.writeText(token).then(
+      () => { setCopied(true); window.setTimeout(() => setCopied(false), 1600); },
+      () => { /* 剪贴板不可用（非安全上下文）时令牌仍可手动选中 */ },
+    );
+  };
   const saveName = () => { const v = name.trim(); if (v && v !== s.assistantName) { s.saveAssistantName(v); s.push({ label: t('settings.assistant.nameSaved', { name: v }) }); } };
   const saveL2 = () => { if (l2.trim()) { s.savePersonaPrompt(l2); s.push({ label: t('settings.assistant.promptSaved') }); } };
   return (
@@ -309,6 +333,19 @@ export function SettingsPage({ s }: { s: S }) {
           <span className="cj-avatar" style={{ width: 44, height: 44, fontSize: 16, flex: 'none' }}>{s.assistantName.charAt(0)}</span>
           <div className="bd"><div className="t" style={{ fontSize: 15 }}>{s.assistantName}</div><div className="s">{t('settings.user.anonymous')}</div></div>
         </div>
+
+        <Group lab={t('settings.import.title')} sub={t('settings.import.desc')}>
+          <Row icon={<Key size={17} />} t={t('settings.import.token')} s={token || t('settings.import.tokenNone')}>
+            <button className="cj-chip" disabled={tokenBusy} onClick={rotateToken}>
+              {token ? t('settings.import.tokenRotate') : t('settings.import.tokenGenerate')}
+            </button>
+            {token !== '' && (
+              <button className="cj-chip" onClick={copyToken}>
+                <Copy size={13} />{copied ? t('settings.import.tokenCopied') : t('settings.import.tokenCopy')}
+              </button>
+            )}
+          </Row>
+        </Group>
 
         <Group lab={t('settings.theme.title')} sub={t('settings.theme.sub')}><ThemeStudio s={s} /></Group>
 
